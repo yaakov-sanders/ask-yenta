@@ -58,4 +58,4 @@ class PrivateUserCreate(BaseModel):
     email: str
     password: str
     full_name: str
-    is_verified: bool = False 
+    is_verified: bool = False

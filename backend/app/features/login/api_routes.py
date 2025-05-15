@@ -7,13 +7,17 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 import app.features.login.crud
 import app.features.users.crud
-from app.features.core.api_deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.core import security
 from app.core.config import settings
 from app.core.security import get_password_hash
-from app.features.users.models import UserPublic
-from app.features.login.models import NewPassword, Token
+from app.features.core.api_deps import (
+    CurrentUser,
+    SessionDep,
+    get_current_active_superuser,
+)
 from app.features.core.models import Message
+from app.features.login.models import NewPassword, Token
+from app.features.users.models import UserPublic
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,

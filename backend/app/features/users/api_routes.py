@@ -6,13 +6,15 @@ from pydantic import BaseModel
 from sqlmodel import col, delete, func, select
 
 import app.features.users.crud
+from app.core.config import settings
+from app.core.security import get_password_hash
 from app.features.core.api_deps import (
     CurrentUser,
     SessionDep,
     get_current_active_superuser,
 )
-from app.core.config import settings
-from app.core.security import get_password_hash
+from app.features.core.models import Message
+from app.features.items.models import Item
 from app.features.users.models import (
     User,
     UserCreate,
@@ -22,8 +24,6 @@ from app.features.users.models import (
     UserUpdate,
     UserUpdateMe,
 )
-from app.features.core.models import Message
-from app.features.items.models import Item
 from app.utils import generate_new_account_email, send_email
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -224,4 +224,4 @@ def create_private_user(user_in: PrivateUserCreate, session: SessionDep) -> Any:
 
     session.add(user)
     session.commit()
-    return user 
+    return user
