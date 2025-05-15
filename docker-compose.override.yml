@@ -66,7 +66,7 @@ services:
       - fastapi
       - run
       - --reload
-      - "app/api_main.py"
+      - "app/main.py"
     develop:
       watch:
         - path: ./backend
@@ -92,15 +92,15 @@ services:
       - "1080:1080"
       - "1025:1025"
 
-  frontend:
-    restart: "no"
-    ports:
-      - "5173:80"
-    build:
-      context: ./frontend
-      args:
-        - VITE_API_URL=http://localhost:8000
-        - NODE_ENV=development
+#  frontend:
+#    restart: "no"
+#    ports:
+#      - "5173:80"
+#    build:
+#      context: ./frontend
+#      args:
+#        - VITE_API_URL=http://localhost:8000
+#        - NODE_ENV=development
 
   playwright:
     build:
