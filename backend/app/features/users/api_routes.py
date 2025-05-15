@@ -6,8 +6,7 @@ from pydantic import BaseModel
 from sqlmodel import col, delete, func, select
 
 import app.features.users.crud
-from app import crud
-from app.api.deps import (
+from app.features.core.api_deps import (
     CurrentUser,
     SessionDep,
     get_current_active_superuser,

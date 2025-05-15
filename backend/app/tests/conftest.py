@@ -1,13 +1,9 @@
-import uuid
-from typing import Callable, Generator
+from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
-from sqlmodel.pool import StaticPool
+from sqlmodel import Session
 
-from app import crud
-from app.api.deps import get_db
 from app.core.config import settings
 from app.features.users.models import User
 from app.main import app
