@@ -5,14 +5,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
+import app.features.login.crud
 import app.features.users.crud
-from app import crud
 from app.features.core.api_deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.core import security
 from app.core.config import settings
 from app.core.security import get_password_hash
 from app.features.users.models import UserPublic
-from app.models import Message, NewPassword, Token
+from app.features.login.models import NewPassword, Token
+from app.features.core.models import Message
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
@@ -30,7 +31,7 @@ def login_access_token(
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    user = crud.authenticate(
+    user = app.features.login.crud.authenticate(
         session=session, email=form_data.username, password=form_data.password
     )
     if not user:

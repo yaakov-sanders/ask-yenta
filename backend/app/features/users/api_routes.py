@@ -22,7 +22,8 @@ from app.features.users.models import (
     UserUpdate,
     UserUpdateMe,
 )
-from app.models import Item, Message
+from app.features.core.models import Message
+from app.features.items.models import Item
 from app.utils import generate_new_account_email, send_email
 
 router = APIRouter(prefix="/users", tags=["users"])

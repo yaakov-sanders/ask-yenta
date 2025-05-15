@@ -1,13 +1,10 @@
 import uuid
 from unittest.mock import patch
-from typing import Callable
 
-import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 import app.features.users.crud
-from app import crud
 from app.core.config import settings
 from app.core.security import verify_password
 from app.features.users.models import User, UserCreate

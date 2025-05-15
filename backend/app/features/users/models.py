@@ -3,7 +3,7 @@ import uuid
 from pydantic import BaseModel, EmailStr
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models import Item
+from app.features.login.models import Item
 
 
 # Shared properties

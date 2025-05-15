@@ -1,10 +1,7 @@
-from typing import Callable
-
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 import app.features.users.crud
-from app import crud
 from app.core.config import settings
 from app.features.users.models import User, UserCreate, UserUpdate
 from app.tests.utils.utils import random_email, random_lower_string
