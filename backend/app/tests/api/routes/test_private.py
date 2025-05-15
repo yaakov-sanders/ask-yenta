@@ -2,7 +2,8 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.core.config import settings
-from app.models import User
+from app.features.users.models import User
+from app.tests.utils.utils import random_email, random_lower_string
 
 
 def test_create_user(client: TestClient, db: Session) -> None:
