@@ -1,10 +1,13 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
-from app.features.core.api_deps import CurrentUser, SessionDep
-from app.features.conversation_memory.crud import get_conversation_memory, update_conversation_memory
+from app.features.conversation_memory.crud import (
+    get_conversation_memory,
+    update_conversation_memory,
+)
 from app.features.conversation_memory.models import ChatRequest, ChatResponse
+from app.features.core.api_deps import CurrentUser, SessionDep
 from app.features.user_profile.llm import chat_with_memory as llm_chat_with_memory
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -22,14 +25,14 @@ async def chat_with_memory(
     """
     user_id = chat_request.user_id
     user_message = chat_request.message
-    
+
     # Get existing conversation memory or initialize empty
     memory = get_conversation_memory(session, user_id)
-    
+
     # Get current summary and messages
     summary = memory.summary if memory and memory.summary else "No previous context available."
     messages = memory.messages if memory and memory.messages else []
-    
+
     try:
         # Call the centralized LLM function
         reply, updated_summary = llm_chat_with_memory(
@@ -37,14 +40,14 @@ async def chat_with_memory(
             summary=summary,
             conversation_history=messages
         )
-        
+
         # Create new message object
         new_message = {"role": "user", "content": user_message}
-        
+
         # Update conversation memory
         update_conversation_memory(session, user_id, new_message, reply, updated_summary)
-        
+
         return ChatResponse(reply=reply, updated_summary=updated_summary)
-            
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")

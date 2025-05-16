@@ -1,24 +1,24 @@
 import uuid
 from datetime import datetime
-from typing import Dict, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
-from sqlmodel import Field, Relationship, SQLModel
-from sqlalchemy import Column, JSON
+from sqlalchemy import JSON, Column
+from sqlmodel import Field, SQLModel
 
 # Use TYPE_CHECKING for circular imports
 if TYPE_CHECKING:
-    from app.features.users.models import User
+    pass
 
 
 class UserLLMProfileBase(SQLModel):
-    profile_data: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
+    profile_data: dict[str, Any] = Field(default={}, sa_column=Column(JSON))
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class UserLLMProfile(UserLLMProfileBase, table=True):
     __tablename__ = "user_llm_profile"
-    
+
     user_id: uuid.UUID = Field(primary_key=True, foreign_key="user.id")
     # Removing relationship to User
 
@@ -30,7 +30,7 @@ class UserProfileText(BaseModel):
 
 class UserProfileResponse(BaseModel):
     status: str
-    profile: Dict[str, Any]
+    profile: dict[str, Any]
 
 
 class DirectLLMPrompt(BaseModel):
@@ -42,4 +42,4 @@ class LLMResponse(BaseModel):
 
 
 class UserLLMProfileRead(UserLLMProfileBase):
-    user_id: uuid.UUID 
+    user_id: uuid.UUID

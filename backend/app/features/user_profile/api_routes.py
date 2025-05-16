@@ -1,14 +1,17 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
 from app.features.core.api_deps import CurrentUser, SessionDep
 from app.features.user_profile.crud import get_llm_profile, upsert_llm_profile
 from app.features.user_profile.llm import parse_profile_from_text
-from app.features.user_profile.models import UserLLMProfileRead, UserProfileResponse, UserProfileText
+from app.features.user_profile.models import (
+    UserLLMProfileRead,
+    UserProfileResponse,
+    UserProfileText,
+)
 from app.features.users.models import User
-
 
 router = APIRouter(prefix="/users", tags=["user-profile"])
 
@@ -21,28 +24,28 @@ async def submit_profile_text(
     current_user: CurrentUser,
 ) -> Any:
     """
-    Submit free-form text about a user, which will be parsed by an LLM 
+    Submit free-form text about a user, which will be parsed by an LLM
     into structured JSON and stored in the database.
     """
     # Check if user exists
     db_user = session.get(User, user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # Check permissions (only superusers can update other user profiles)
     if user_id != current_user.id and not current_user.is_superuser:
         raise HTTPException(
             status_code=403,
             detail="Not enough permissions to update other user's profile"
         )
-        
+
     try:
         # Parse the free-form text using LLM
         parsed_profile = parse_profile_from_text(profile_text.text)
-        
+
         # Upsert the profile in the database
         profile, status = upsert_llm_profile(session, user_id, parsed_profile)
-        
+
         return UserProfileResponse(status=status, profile=profile.profile_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -61,17 +64,17 @@ async def get_user_profile(
     db_user = session.get(User, user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # Check permissions (only superusers can view other user profiles)
     if user_id != current_user.id and not current_user.is_superuser:
         raise HTTPException(
             status_code=403,
             detail="Not enough permissions to view other user's profile"
         )
-    
+
     # Get the profile
     profile = get_llm_profile(session, user_id)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
-    
-    return profile 
+
+    return profile

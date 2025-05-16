@@ -3,7 +3,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlmodel import col, delete, func, select
+from sqlmodel import func, select
 
 import app.features.users.crud
 from app.core.config import settings

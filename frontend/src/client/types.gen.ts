@@ -13,8 +13,6 @@ export type HTTPValidationError = {
   detail: Array<ValidationError>
 }
 
-
-
 export type Message = {
   message: string
 }
@@ -86,8 +84,6 @@ export type ValidationError = {
   msg: string
   type: string
 }
-
-
 
 export type LoginLoginAccessTokenData = {
   formData: Body_login_login_access_token

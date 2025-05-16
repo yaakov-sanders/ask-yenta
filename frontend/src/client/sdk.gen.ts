@@ -437,7 +437,7 @@ export class ChatService {
    * @throws ApiError
    */
   public static chatWithMemory(
-    data: ChatRequest
+    data: ChatRequest,
   ): CancelablePromise<ChatResponse> {
     return __request(OpenAPI, {
       method: "POST",

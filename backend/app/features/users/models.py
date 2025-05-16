@@ -1,12 +1,13 @@
 import uuid
 
-from pydantic import BaseModel, EmailStr
-from sqlmodel import Field, Relationship, SQLModel
-
 # Forward references for type hints
 from typing import TYPE_CHECKING
+
+from pydantic import BaseModel, EmailStr
+from sqlmodel import Field, SQLModel
+
 if TYPE_CHECKING:
-    from app.features.user_profile.models import UserLLMProfile
+    pass
 
 
 # Shared properties
