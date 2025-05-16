@@ -547,3 +547,32 @@ export class UtilsService {
     })
   }
 }
+
+export interface DirectLLMPromptRequest {
+  prompt: string
+  model?: string
+}
+
+export interface LLMResponse {
+  response: string
+}
+
+export class UserProfileService {
+  /**
+   * Send Prompt
+   * Send a prompt directly to the LLM and return the raw response.
+   * @param data The data for the request.
+   * @returns LLMResponse The response from the LLM
+   * @throws ApiError
+   */
+  public static sendPrompt(
+    data: DirectLLMPromptRequest
+  ): CancelablePromise<LLMResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/users/prompt",
+      body: data,
+      mediaType: "application/json",
+    })
+  }
+}

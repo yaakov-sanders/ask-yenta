@@ -5,6 +5,11 @@ from sqlmodel import Field, Relationship, SQLModel
 
 from app.features.items.models import Item
 
+# Forward references for type hints
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.features.user_profile.models import UserLLMProfile
+
 
 # Shared properties
 class UserBase(SQLModel):
