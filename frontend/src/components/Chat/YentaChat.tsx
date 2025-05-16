@@ -40,25 +40,19 @@ interface Message {
 export const YentaChat = () => {
   const [text, setText] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
-  const [userId, setUserId] = useState<string>("")
   const [page, setPage] = useState(0)
   const limit = 10
 
-  // Fetch the current user id on component mount
-  useEffect(() => {
-    const fetchUserId = async () => {
-      try {
-        const user = await UsersService.readUserMe()
-        if (user?.id) {
-          setUserId(String(user.id))
-        }
-      } catch (error) {
-        console.error("Failed to fetch user:", error)
-      }
-    }
+  // Fetch the current user with React Query
+  const userQuery = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: UsersService.readUserMe,
+  })
 
-    fetchUserId()
-  }, [])
+  const userId = useMemo(() => 
+    userQuery.data?.id ? String(userQuery.data.id) : "", 
+    [userQuery.data]
+  )
 
   // Fetch chat history when userId is available
   const chatHistoryQuery = useQuery<ChatHistoryResponse>({
@@ -103,8 +97,8 @@ export const YentaChat = () => {
   })
 
   const isDisabled = useMemo(
-    () => !text || chatMutation.isPending || !userId,
-    [text, chatMutation.isPending, userId],
+    () => !text || chatMutation.isPending || !userId || userQuery.isLoading,
+    [text, chatMutation.isPending, userId, userQuery.isLoading],
   )
 
   const sendText = useCallback(() => {
@@ -168,7 +162,7 @@ export const YentaChat = () => {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={userId ? "Type your message to Yenta..." : "Loading..."}
+          placeholder={userQuery.isLoading ? "Loading..." : "Type your message to Yenta..."}
           borderColor="gray.600"
           _hover={{ borderColor: "gray.500" }}
           _focus={{ borderColor: "blue.400" }}
