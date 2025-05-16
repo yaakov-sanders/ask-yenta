@@ -3,8 +3,6 @@ import uuid
 from pydantic import BaseModel, EmailStr
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.features.items.models import Item
-
 # Forward references for type hints
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -45,7 +43,6 @@ class UserUpdateMe(SQLModel):
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str = Field(max_length=255)
-    items: list[Item] = Relationship(back_populates="owner")
 
 
 # Properties to return via API, id is always required

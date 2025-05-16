@@ -14,7 +14,6 @@ from app.features.core.api_deps import (
     get_current_active_superuser,
 )
 from app.features.core.models import Message
-from app.features.items.models import Item
 from app.features.users.models import (
     User,
     UserCreate,
@@ -196,8 +195,6 @@ def delete_user(
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
-    statement = delete(Item).where(col(Item.owner_id) == user_id)
-    session.exec(statement)  # type: ignore
     session.delete(user)
     session.commit()
     return Message(message="User deleted successfully")

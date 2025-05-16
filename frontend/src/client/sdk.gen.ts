@@ -4,16 +4,6 @@ import type { CancelablePromise } from "./core/CancelablePromise"
 import { OpenAPI } from "./core/OpenAPI"
 import { request as __request } from "./core/request"
 import type {
-  ItemsCreateItemData,
-  ItemsCreateItemResponse,
-  ItemsDeleteItemData,
-  ItemsDeleteItemResponse,
-  ItemsReadItemData,
-  ItemsReadItemResponse,
-  ItemsReadItemsData,
-  ItemsReadItemsResponse,
-  ItemsUpdateItemData,
-  ItemsUpdateItemResponse,
   LoginLoginAccessTokenData,
   LoginLoginAccessTokenResponse,
   LoginRecoverPasswordData,
