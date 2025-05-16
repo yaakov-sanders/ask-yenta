@@ -69,9 +69,7 @@ const DeleteUser = ({ id }: { id: string }) => {
           </DialogHeader>
           <DialogBody>
             <Text mb={4}>
-              All items associated with this user will also be{" "}
-              <strong>permanently deleted.</strong> Are you sure? You will not
-              be able to undo this action.
+              Are you sure you want to delete this user? This action is permanent and cannot be undone.
             </Text>
           </DialogBody>
 
