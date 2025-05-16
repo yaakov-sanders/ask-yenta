@@ -1,10 +1,11 @@
 import { Button, Flex, Text, Textarea } from "@chakra-ui/react"
 import { useMutation } from "@tanstack/react-query"
-import React, { useCallback, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 
 import type { ApiError } from "@/client/core/ApiError"
-import { UserProfileService, type LLMResponse } from "@/client"
+import { ChatService, type ChatResponse } from "@/client"
 import { handleError } from "@/utils"
+import { UsersService } from "@/client/sdk.gen"
 
 const TextBubble = ({ text }: { text: string }) => {
   return <Text>{text}</Text>
@@ -13,6 +14,23 @@ const TextBubble = ({ text }: { text: string }) => {
 export const YentaChat = () => {
   const [text, setText] = useState("")
   const [conversation, setConversation] = useState<string[]>([])
+  const [userId, setUserId] = useState<string>("")
+
+  // Fetch the current user id on component mount
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const user = await UsersService.readUserMe()
+        if (user && user.id) {
+          setUserId(String(user.id))
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error)
+      }
+    }
+    
+    fetchUserId()
+  }, [])
 
   const appendToConversation = useCallback(
     (newText: string) => {
@@ -26,10 +44,10 @@ export const YentaChat = () => {
     [conversation],
   )
 
-  const promptMutation = useMutation<LLMResponse, ApiError, string>({
-    mutationFn: (prompt: string) => UserProfileService.sendPrompt({ prompt }),
+  const chatMutation = useMutation<ChatResponse, ApiError, string>({
+    mutationFn: (message: string) => ChatService.chatWithMemory({ user_id: userId, message }),
     onSuccess: (data) => {
-      appendToConversation(`Yenta: ${data.response}`)
+      appendToConversation(`Yenta: ${data.reply}`)
     },
     onError: (err) => {
       appendToConversation("Yenta: Sorry, I'm having trouble connecting to my brain right now.")
@@ -37,21 +55,24 @@ export const YentaChat = () => {
     },
   })
 
-  const isDisabled = useMemo(() => !text || promptMutation.isPending, [text, promptMutation.isPending]);
+  const isDisabled = useMemo(() => 
+    !text || chatMutation.isPending || !userId, 
+    [text, chatMutation.isPending, userId]
+  );
 
   const sendText = useCallback(() => {
-    // Return early if no text or already loading
+    // Return early if no text, already loading, or no user ID
     if (isDisabled) return;
     
     // Add user message to conversation
     appendToConversation(`You: ${text}`)
     
-    // Send the prompt to the LLM
-    promptMutation.mutate(text)
+    // Send the message to the chat API
+    chatMutation.mutate(text)
     
     // Clear the input
     setText("")
-  }, [text, setText, appendToConversation, promptMutation, isDisabled])
+  }, [text, setText, appendToConversation, chatMutation, isDisabled])
   
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -70,8 +91,14 @@ export const YentaChat = () => {
         value={text} 
         onChange={(e) => setText(e.target.value)} 
         onKeyDown={handleKeyDown}
+        placeholder={userId ? "Type your message to Yenta..." : "Loading..."}
       />
-      <Button onClick={sendText} loading={promptMutation.isPending} disabled={isDisabled}>
+      <Button 
+        onClick={sendText} 
+        loadingText="Sending..."
+        loading={chatMutation.isPending} 
+        disabled={isDisabled}
+      >
         Send
       </Button>
     </Flex>

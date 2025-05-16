@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.features.core.api_deps import CurrentUser, SessionDep
 from app.features.user_profile.crud import get_llm_profile, upsert_llm_profile
-from app.features.user_profile.llm import parse_profile_from_text, send_direct_prompt
-from app.features.user_profile.models import DirectLLMPrompt, LLMResponse, UserLLMProfileRead, UserProfileResponse, UserProfileText
+from app.features.user_profile.llm import parse_profile_from_text
+from app.features.user_profile.models import UserLLMProfileRead, UserProfileResponse, UserProfileText
 from app.features.users.models import User
 
 
@@ -74,21 +74,4 @@ async def get_user_profile(
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     
-    return profile
-
-
-@router.post("/prompt", response_model=LLMResponse)
-async def send_llm_prompt(
-    prompt_data: DirectLLMPrompt,
-    current_user: CurrentUser,
-) -> Any:
-    """
-    Send a prompt directly to the LLM and return the raw response.
-    This endpoint is accessible to all authenticated users.
-    """
-    try:
-        # Send the prompt to the LLM
-        response_text = send_direct_prompt(prompt_data.prompt)
-        return LLMResponse(response=response_text)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) 
+    return profile 

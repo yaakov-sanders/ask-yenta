@@ -417,29 +417,31 @@ export class UtilsService {
   }
 }
 
-export interface DirectLLMPromptRequest {
-  prompt: string
-  model?: string
+export interface ChatRequest {
+  user_id: string
+  message: string
 }
 
-export interface LLMResponse {
-  response: string
+export interface ChatResponse {
+  reply: string
+  updated_summary: string
 }
 
-export class UserProfileService {
+export class ChatService {
   /**
-   * Send Prompt
-   * Send a prompt directly to the LLM and return the raw response.
+   * Chat With Memory
+   * Chat with the LLM using hybrid memory (summary + recent messages).
+   * Updates the conversation memory and returns the assistant's reply with the updated summary.
    * @param data The data for the request.
-   * @returns LLMResponse The response from the LLM
+   * @returns ChatResponse The response from the chat API
    * @throws ApiError
    */
-  public static sendPrompt(
-    data: DirectLLMPromptRequest
-  ): CancelablePromise<LLMResponse> {
+  public static chatWithMemory(
+    data: ChatRequest
+  ): CancelablePromise<ChatResponse> {
     return __request(OpenAPI, {
       method: "POST",
-      url: "/api/v1/users/prompt",
+      url: "/api/v1/chat",
       body: data,
       mediaType: "application/json",
     })
