@@ -13,6 +13,7 @@ OLLAMA_API_PORT = 11434
 OLLAMA_API_URL_GENERATE = f"http://{OLLAMA_API_HOST}:{OLLAMA_API_PORT}/api/generate"
 OLLAMA_API_URL_CHAT = f"http://{OLLAMA_API_HOST}:{OLLAMA_API_PORT}/api/chat"
 DEFAULT_MODEL = "llama3.2:latest"
+MAX_RETRIES = 2  # Maximum number of retries for malformed JSON
 
 
 def parse_profile_from_text(text: str) -> dict[str, Any]:
@@ -114,13 +115,16 @@ def chat_with_memory(
     Raises:
         Exception: If the API call fails or the response cannot be parsed
     """
-    # Prepare message history
-    messages = []
+    retries = 0
+    last_error = None
 
-    # Add system message with user summary and strict JSON format instructions
-    system_message = {
-        "role": "system",
-        "content": f"""You are Yenta. Here is what you remember about this user:
+    while retries <= MAX_RETRIES:
+        try:
+            # Prepare message history
+            messages = []
+
+            # Add system message with user summary and strict JSON format instructions
+            system_message_content = f"""You are Yenta. Here is what you remember about this user:
 
 {summary}
 
@@ -136,85 +140,108 @@ DO NOT add any markdown formatting or code blocks.
 DO NOT include the word 'json' or any other text before or after your JSON object.
 JUST RETURN THE JSON OBJECT DIRECTLY.
 """
-    }
-    messages.append(system_message)
 
-    # Add recent conversation history (up to the last 10 messages)
-    recent_messages = conversation_history[-10:] if len(conversation_history) > 10 else conversation_history
-    messages.extend(recent_messages)
+            # If we're retrying, add error information to the system message
+            if retries > 0:
+                system_message_content += f"""
 
-    # Add new user message
-    new_message = {"role": "user", "content": user_message}
-    messages.append(new_message)
+IMPORTANT: Your previous response contained invalid JSON.
+Error details: {last_error}
+DO NOT make the same mistake again.
+MAKE SURE you properly close all JSON brackets and quotes.
+DOUBLE CHECK your response format before submitting.
+"""
 
-    # Prepare payload for Ollama API
-    payload = {
-        "model": DEFAULT_MODEL,
-        "messages": messages,
-        "stream": False,  # Explicitly disable streaming
-        "temperature": 0.2  # Lower temperature for more consistent outputs
-    }
+            system_message = {
+                "role": "system",
+                "content": system_message_content
+            }
+            messages.append(system_message)
 
-    try:
-        # Call Ollama API
-        response = requests.post(OLLAMA_API_URL_CHAT, json=payload)
-        response.raise_for_status()
+            # Add recent conversation history (up to the last 10 messages)
+            recent_messages = conversation_history[-10:] if len(conversation_history) > 10 else conversation_history
+            messages.extend(recent_messages)
 
-        # Log the raw response content for debugging
-        logger.info(f"Raw API response status: {response.status_code}")
-        logger.info(f"Raw API response content: {response.content[:1000]}")  # Log first 1000 chars in case it's large
+            # Add new user message
+            new_message = {"role": "user", "content": user_message}
+            messages.append(new_message)
 
-        # Parse the response
-        try:
-            result = response.json()
-            logger.info(f"Successfully parsed API response: {result}")
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse API response as JSON: {str(e)}")
-            logger.error(f"Response content: {response.content.decode('utf-8', errors='replace')}")
-            raise Exception(f"Invalid JSON response from Ollama API: {str(e)}")
+            # Prepare payload for Ollama API
+            payload = {
+                "model": DEFAULT_MODEL,
+                "messages": messages,
+                "stream": False,  # Explicitly disable streaming
+                "temperature": 0.2  # Lower temperature for more consistent outputs
+            }
 
-        response_text = result.get("message", {}).get("content", "{}")
+            # Call Ollama API
+            response = requests.post(OLLAMA_API_URL_CHAT, json=payload)
+            response.raise_for_status()
 
-        # Log the extracted text before JSON parsing
-        logger.info(f"Extracted response text: {response_text[:1000]}")  # First 1000 chars
+            # Log the raw response content for debugging
+            logger.info(f"Raw API response status: {response.status_code}")
+            logger.info(f"Raw API response content: {response.content[:1000]}")  # Log first 1000 chars in case it's large
 
-        # Extract JSON from the response
-        try:
-            # Find JSON in the response text
-            start_idx = response_text.find('{')
-            end_idx = response_text.rfind('}')
+            # Parse the response
+            try:
+                result = response.json()
+                logger.info(f"Successfully parsed API response: {result}")
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse API response as JSON: {str(e)}")
+                logger.error(f"Response content: {response.content.decode('utf-8', errors='replace')}")
+                raise Exception(f"Invalid JSON response from Ollama API: {str(e)}")
 
-            logger.info(f"JSON start index: {start_idx}, end index: {end_idx}")
+            response_text = result.get("message", {}).get("content", "{}")
 
-            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-                json_str = response_text[start_idx:end_idx+1]
-                logger.info(f"Extracted JSON string: {json_str[:1000]}")  # Log the extracted JSON
+            # Log the extracted text before JSON parsing
+            logger.info(f"Extracted response text: {response_text[:1000]}")
 
-                try:
-                    parsed_response = json.loads(json_str)
-                    logger.info(f"Successfully parsed JSON: {parsed_response}")
+            # Extract JSON from the response
+            try:
+                # Find JSON in the response text
+                start_idx = response_text.find('{')
+                end_idx = response_text.rfind('}')
 
-                    reply = parsed_response.get("reply", "Sorry, I couldn't generate a proper response.")
-                    updated_summary = parsed_response.get("updated_summary", summary)
+                logger.info(f"JSON start index: {start_idx}, end index: {end_idx}")
 
-                    return reply, updated_summary
-                except json.JSONDecodeError as e:
-                    logger.error(f"JSON parsing error: {str(e)}", exc_info=True)
-                    raise Exception(f"LLM returned malformed JSON: {str(e)}")
-            else:
-                logger.error("No JSON object found in response text")
-                raise Exception("LLM failed to return JSON. Please respond with a proper JSON format.")
-        except (json.JSONDecodeError, ValueError) as e:
-            # If can't parse as JSON, use the whole response as reply and keep old summary
-            logger.error(f"JSON processing error: {str(e)}", exc_info=True)
-            raise Exception("LLM failed to return valid JSON. Please reformat your response.")
+                if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                    json_str = response_text[start_idx:end_idx+1]
+                    logger.info(f"Extracted JSON string: {json_str[:1000]}")  # Log the extracted JSON
 
-    except requests.RequestException as e:
-        # Handle API request errors
-        logger.error(f"API request error in chat_with_memory: {str(e)}", exc_info=True)
-        raise Exception(f"Error calling Ollama API: {str(e)}")
-    except Exception as e:
-        # Handle general errors
-        logger.error(f"Error processing LLM chat response: {str(e)}", exc_info=True)
-        raise Exception(f"Error processing LLM response: {str(e)}")
+                    try:
+                        parsed_response = json.loads(json_str)
+                        logger.info(f"Successfully parsed JSON: {parsed_response}")
+
+                        reply = parsed_response.get("reply", "Sorry, I couldn't generate a proper response.")
+                        updated_summary = parsed_response.get("updated_summary", summary)
+
+                        return reply, updated_summary
+                    except json.JSONDecodeError as e:
+                        last_error = f"JSON parsing error: {str(e)}"
+                        logger.error(last_error, exc_info=True)
+                        raise Exception(last_error)
+                else:
+                    last_error = "No JSON object found in response text"
+                    logger.error(last_error)
+                    raise Exception(last_error)
+            except (json.JSONDecodeError, ValueError) as e:
+                # If can't parse as JSON, use the whole response as reply and keep old summary
+                last_error = f"JSON processing error: {str(e)}"
+                logger.error(last_error, exc_info=True)
+                raise Exception(last_error)
+
+        except requests.RequestException as e:
+            # Handle API request errors - these are not retryable
+            logger.error(f"API request error in chat_with_memory: {str(e)}", exc_info=True)
+            raise Exception(f"Error calling Ollama API: {str(e)}")
+        except Exception as e:
+            # Retry on JSON parsing errors
+            logger.warning(f"Attempt {retries + 1}/{MAX_RETRIES + 1} failed: {str(e)}")
+            last_error = str(e)
+            retries += 1
+            continue  # Try again
+
+    # If we've exhausted retries, raise the last error
+    logger.error(f"Error processing LLM chat response after {MAX_RETRIES + 1} attempts: {last_error}")
+    raise Exception(f"Failed to get valid JSON after {MAX_RETRIES + 1} attempts. Last error: {last_error}")
 

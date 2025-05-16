@@ -1,16 +1,57 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from app.features.conversation_memory.crud import (
+    get_conversation_history,
     get_conversation_memory,
     update_conversation_memory,
 )
-from app.features.conversation_memory.models import ChatRequest, ChatResponse
+from app.features.conversation_memory.models import (
+    ChatHistoryResponse,
+    ChatRequest,
+    ChatResponse,
+)
 from app.features.core.api_deps import CurrentUser, SessionDep
 from app.features.user_profile.llm import chat_with_memory as llm_chat_with_memory
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+@router.get("/history", response_model=ChatHistoryResponse)
+async def get_chat_history(
+    user_id: str,
+    limit: int = Query(10, ge=1, le=50),
+    offset: int = Query(0, ge=0),
+    session: SessionDep = None,
+    current_user: CurrentUser = None,
+) -> ChatHistoryResponse:
+    """
+    Get chat history for a user with pagination.
+    Returns the most recent messages first.
+
+    - **user_id**: ID of the user to get chat history for
+    - **limit**: Maximum number of messages to retrieve (default: 10, max: 50)
+    - **offset**: Number of messages to skip for pagination (default: 0)
+    """
+    try:
+        messages, total_count = get_conversation_history(
+            db=session,
+            user_id=user_id,
+            limit=limit,
+            offset=offset
+        )
+
+        has_more = total_count > (offset + len(messages))
+
+        return ChatHistoryResponse(
+            messages=messages,
+            has_more=has_more,
+            total_count=total_count
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving chat history: {str(e)}")
 
 
 @router.post("", response_model=ChatResponse)

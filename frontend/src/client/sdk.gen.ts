@@ -427,6 +427,12 @@ export interface ChatResponse {
   updated_summary: string
 }
 
+export interface ChatHistoryResponse {
+  messages: Array<{ role: string; content: string }>
+  has_more: boolean
+  total_count: number
+}
+
 export class ChatService {
   /**
    * Chat With Memory
@@ -444,6 +450,31 @@ export class ChatService {
       url: "/api/v1/chat",
       body: data,
       mediaType: "application/json",
+    })
+  }
+
+  /**
+   * Get Chat History
+   * Retrieves paginated chat history for a user.
+   * @param userId User ID to get chat history for
+   * @param limit Maximum number of messages to retrieve (default: 10)
+   * @param offset Number of messages to skip for pagination (default: 0)
+   * @returns ChatHistoryResponse The paginated chat history
+   * @throws ApiError
+   */
+  public static getChatHistory(
+    userId: string,
+    limit: number = 10,
+    offset: number = 0,
+  ): CancelablePromise<ChatHistoryResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/chat/history",
+      query: {
+        user_id: userId,
+        limit: limit,
+        offset: offset,
+      },
     })
   }
 }

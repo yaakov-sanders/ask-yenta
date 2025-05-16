@@ -24,3 +24,9 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
     updated_summary: str
+
+
+class ChatHistoryResponse(BaseModel):
+    messages: list[dict[str, str]]
+    has_more: bool
+    total_count: int
