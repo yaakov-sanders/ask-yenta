@@ -1,6 +1,6 @@
 import { Button, Flex, Text, Textarea } from "@chakra-ui/react"
 import { useMutation } from "@tanstack/react-query"
-import { useCallback, useMemo, useState } from "react"
+import React, { useCallback, useMemo, useState } from "react"
 
 import type { ApiError } from "@/client/core/ApiError"
 import { UserProfileService, type LLMResponse } from "@/client"
@@ -37,7 +37,12 @@ export const YentaChat = () => {
     },
   })
 
+  const isDisabled = useMemo(() => !text || promptMutation.isPending, [text, promptMutation.isPending]);
+
   const sendText = useCallback(() => {
+    // Return early if no text or already loading
+    if (isDisabled) return;
+    
     // Add user message to conversation
     appendToConversation(`You: ${text}`)
     
@@ -46,13 +51,27 @@ export const YentaChat = () => {
     
     // Clear the input
     setText("")
-  }, [text, setText, appendToConversation, promptMutation])
+  }, [text, setText, appendToConversation, promptMutation, isDisabled])
+  
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendText();
+      }
+    },
+    [sendText]
+  );
   
   return (
     <Flex gap={4} direction={"column"}>
       {conversationBubbles}
-      <Textarea value={text} onChange={(e) => setText(e.target.value)} />
-      <Button onClick={sendText} loading={promptMutation.isPending} disabled={!text || promptMutation.isPending}>
+      <Textarea 
+        value={text} 
+        onChange={(e) => setText(e.target.value)} 
+        onKeyDown={handleKeyDown}
+      />
+      <Button onClick={sendText} loading={promptMutation.isPending} disabled={isDisabled}>
         Send
       </Button>
     </Flex>
