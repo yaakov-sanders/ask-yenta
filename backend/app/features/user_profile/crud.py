@@ -2,12 +2,13 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlmodel import Session, select
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.features.user_profile.models import UserLLMProfile
 
 
-def upsert_llm_profile(db: Session, user_id: uuid.UUID, new_data: dict[str, Any]) -> tuple[UserLLMProfile, str]:
+async def upsert_llm_profile(db: AsyncSession, user_id: uuid.UUID, new_data: dict[str, Any]) -> tuple[UserLLMProfile, str]:
     """
     Upsert a user LLM profile. If profile exists and content changed, update profile_data and updated_at.
     If it doesn't exist, insert a new record. If it's unchanged, do nothing.
@@ -16,7 +17,8 @@ def upsert_llm_profile(db: Session, user_id: uuid.UUID, new_data: dict[str, Any]
     """
     # Check if profile exists
     statement = select(UserLLMProfile).where(UserLLMProfile.user_id == user_id)
-    existing_profile = db.exec(statement).first()
+    result = await db.exec(statement)
+    existing_profile = result.first()
 
     if existing_profile:
         # Check if data has changed
@@ -24,8 +26,8 @@ def upsert_llm_profile(db: Session, user_id: uuid.UUID, new_data: dict[str, Any]
             existing_profile.profile_data = new_data
             existing_profile.updated_at = datetime.utcnow()
             db.add(existing_profile)
-            db.commit()
-            db.refresh(existing_profile)
+            await db.commit()
+            await db.refresh(existing_profile)
             return existing_profile, "updated"
         return existing_profile, "unchanged"
     else:
@@ -36,14 +38,15 @@ def upsert_llm_profile(db: Session, user_id: uuid.UUID, new_data: dict[str, Any]
             updated_at=datetime.utcnow()
         )
         db.add(profile)
-        db.commit()
-        db.refresh(profile)
+        await db.commit()
+        await db.refresh(profile)
         return profile, "created"
 
 
-def get_llm_profile(db: Session, user_id: uuid.UUID) -> UserLLMProfile | None:
+async def get_llm_profile(db: AsyncSession, user_id: uuid.UUID) -> UserLLMProfile | None:
     """
     Get a user's LLM profile.
     """
     statement = select(UserLLMProfile).where(UserLLMProfile.user_id == user_id)
-    return db.exec(statement).first()
+    result = await db.exec(statement)
+    return result.first()

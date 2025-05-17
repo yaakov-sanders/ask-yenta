@@ -3,25 +3,27 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy.orm import attributes
-from sqlmodel import Session, select
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.features.conversation_memory.models import ConversationMemory
 
 # Setup logging
 logger = logging.getLogger(__name__)
 
-def get_conversation_memory(db: Session, user_id: str) -> ConversationMemory | None:
+async def get_conversation_memory(db: AsyncSession, user_id: str) -> ConversationMemory | None:
     """
     Get a user's conversation memory.
     """
     # Convert string user_id to UUID
     user_uuid = uuid.UUID(user_id)
     statement = select(ConversationMemory).where(ConversationMemory.user_id == user_uuid)
-    return db.exec(statement).first()
+    result = await db.exec(statement)
+    return result.first()
 
 
-def get_conversation_history(
-    db: Session,
+async def get_conversation_history(
+    db: AsyncSession,
     user_id: str,
     limit: int = 10,
     offset: int = 0
@@ -38,7 +40,7 @@ def get_conversation_history(
     Returns:
         A tuple containing (messages, total_count)
     """
-    memory = get_conversation_memory(db, user_id)
+    memory = await get_conversation_memory(db, user_id)
 
     if not memory or not memory.messages:
         return [], 0
@@ -55,8 +57,8 @@ def get_conversation_history(
     return messages, total_count
 
 
-def update_conversation_memory(
-    db: Session,
+async def update_conversation_memory(
+    db: AsyncSession,
     user_id: str,
     new_message: dict[str, str],
     assistant_reply: str,
@@ -73,7 +75,7 @@ def update_conversation_memory(
         user_uuid = uuid.UUID(user_id)
 
         # Get existing memory or create new one
-        memory = get_conversation_memory(db, user_id)
+        memory = await get_conversation_memory(db, user_id)
 
         if not memory:
             memory = ConversationMemory(
@@ -104,8 +106,8 @@ def update_conversation_memory(
 
         # Save changes
         db.add(memory)
-        db.commit()
-        db.refresh(memory)
+        await db.commit()
+        await db.refresh(memory)
 
         return memory
 

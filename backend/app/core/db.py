@@ -1,10 +1,18 @@
-from sqlmodel import Session, create_engine, select
+from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import select
+from sqlalchemy.ext.asyncio import create_async_engine
 
 import app.features.users.crud
 from app.core.config import settings
 from app.features.users.models import User, UserCreate
 
-engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
+# Convert database URI to async format (replace postgresql:// with postgresql+asyncpg://)
+database_uri = str(settings.SQLALCHEMY_DATABASE_URI)
+if database_uri.startswith("postgresql://"):
+    database_uri = database_uri.replace("postgresql://", "postgresql+asyncpg://")
+
+# Create async engine
+engine = create_async_engine(database_uri)
 
 
 # make sure all SQLModel models are imported (app.models) before initializing DB
@@ -12,22 +20,22 @@ engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 # for more details: https://github.com/fastapi/full-stack-fastapi-template/issues/28
 
 
-def init_db(session: Session) -> None:
+async def init_db(session: AsyncSession) -> None:
     # Tables should be created with Alembic migrations
     # But if you don't want to use migrations, create
     # the tables un-commenting the next lines
     # from sqlmodel import SQLModel
+    # async with engine.begin() as conn:
+    #     await conn.run_sync(SQLModel.metadata.create_all)
 
-    # This works because the models are already imported and registered from app.models
-    # SQLModel.metadata.create_all(engine)
-
-    user = session.exec(
-        select(User).where(User.email == settings.FIRST_SUPERUSER)
-    ).first()
+    statement = select(User).where(User.email == settings.FIRST_SUPERUSER)
+    result = await session.exec(statement)
+    user = result.first()
+    
     if not user:
         user_in = UserCreate(
             email=settings.FIRST_SUPERUSER,
             password=settings.FIRST_SUPERUSER_PASSWORD,
             is_superuser=True,
         )
-        user = app.features.users.crud.create_user(session=session, user_create=user_in)
+        user = await app.features.users.crud.create_user(session=session, user_create=user_in)

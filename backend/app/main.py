@@ -1,12 +1,20 @@
 import logging
+import traceback
+from typing import Callable
 
 import sentry_sdk
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
+from starlette.exceptions import HTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
+from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from app.core.config import settings
 from app.features.core.api_main import api_router
+from app.features.core.models import ErrorResponse
 
 # Configure logging
 logging.basicConfig(
@@ -15,6 +23,38 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 logger.info("Starting application with logging enabled")
+
+
+class ExceptionMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        try:
+            return await call_next(request)
+        except Exception as e:
+            # Log the exception with traceback
+            error_details = {
+                "path": request.url.path,
+                "method": request.method,
+                "client_host": request.client.host if request.client else None,
+                "exception": str(e),
+                "traceback": traceback.format_exc()
+            }
+            
+            logger.error(
+                f"Unhandled exception: {type(e).__name__}: {str(e)}\n"
+                f"Path: {request.url.path}\n"
+                f"Method: {request.method}\n"
+                f"Traceback: {traceback.format_exc()}"
+            )
+            
+            # Return a 500 response
+            return JSONResponse(
+                status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+                content=ErrorResponse(
+                    detail="Internal server error",
+                    error_code="server_error"
+                ).model_dump(),
+            )
+
 
 def custom_generate_unique_id(route: APIRoute) -> str:
     return f"{route.tags[0]}-{route.name}"
@@ -28,6 +68,9 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     generate_unique_id_function=custom_generate_unique_id,
 )
+
+# Add exception handling middleware
+app.add_middleware(ExceptionMiddleware)
 
 # Set all CORS enabled origins
 if settings.all_cors_origins:

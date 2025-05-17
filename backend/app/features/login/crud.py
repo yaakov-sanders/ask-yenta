@@ -1,12 +1,12 @@
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.security import verify_password
 from app.features.users.crud import get_user_by_email
 from app.features.users.models import User
 
 
-def authenticate(*, session: Session, email: str, password: str) -> User | None:
-    db_user = get_user_by_email(session=session, email=email)
+async def authenticate(*, session: AsyncSession, email: str, password: str) -> User | None:
+    db_user = await get_user_by_email(session=session, email=email)
     if not db_user:
         return None
     if not verify_password(password, db_user.hashed_password):

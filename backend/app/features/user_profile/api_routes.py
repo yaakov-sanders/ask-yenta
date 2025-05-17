@@ -41,7 +41,7 @@ async def create_profile_from_text(
     Returns 409 Conflict if a profile already exists for this user.
     """
     # Check if user exists
-    db_user = session.get(User, user_id)
+    db_user = await session.get(User, user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -52,31 +52,24 @@ async def create_profile_from_text(
             detail="Not enough permissions to update other user's profile"
         )
 
-    try:
-        # Check if the user already has a profile
-        existing_profile = get_llm_profile(session, user_id)
+    # Check if the user already has a profile
+    existing_profile = await get_llm_profile(session, user_id)
 
-        if existing_profile:
-            # Return conflict if profile already exists
-            raise HTTPException(
-                status_code=409,
-                detail="Profile already exists. Use PUT to update an existing profile."
-            )
+    if existing_profile:
+        # Return conflict if profile already exists
+        raise HTTPException(
+            status_code=409,
+            detail="Profile already exists. Use PUT to update an existing profile."
+        )
 
-        # Parse the free-form text using LLM for new profile
-        parsed_profile = await parse_profile_from_text(profile_text.text)
+    # Parse the free-form text using LLM for new profile
+    # The middleware will catch any exceptions and return a proper 500 response
+    parsed_profile = await parse_profile_from_text(profile_text.text)
 
-        # Create a new profile
-        profile, status = upsert_llm_profile(session, user_id, parsed_profile)
+    # Create a new profile
+    profile, status = await upsert_llm_profile(session, user_id, parsed_profile)
 
-        return UserProfileResponse(status=status, profile=profile.profile_data)
-    except HTTPException:
-        # Re-raise HTTP exceptions
-        raise
-    except Exception as e:
-        # Log and wrap other exceptions
-        logger.error(f"Error creating profile: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+    return UserProfileResponse(status=status, profile=profile.profile_data)
 
 
 @router.put("/{user_id}/profile-text", response_model=UserProfileResponse)
@@ -95,7 +88,7 @@ async def update_profile_from_text(
     Returns 404 Not Found if no profile exists for this user.
     """
     # Check if user exists
-    db_user = session.get(User, user_id)
+    db_user = await session.get(User, user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -106,34 +99,27 @@ async def update_profile_from_text(
             detail="Not enough permissions to update other user's profile"
         )
 
-    try:
-        # Get the existing profile
-        existing_profile = get_llm_profile(session, user_id)
+    # Get the existing profile
+    existing_profile = await get_llm_profile(session, user_id)
 
-        if not existing_profile:
-            # Return not found if profile doesn't exist
-            raise HTTPException(
-                status_code=404,
-                detail="Profile not found. Use POST to create a new profile."
-            )
-
-        # Update existing profile with the new text
-        updated_profile = await update_profile_data_from_text(
-            existing_profile.profile_data,
-            profile_text.text
+    if not existing_profile:
+        # Return not found if profile doesn't exist
+        raise HTTPException(
+            status_code=404,
+            detail="Profile not found. Use POST to create a new profile."
         )
 
-        # Save the updated profile
-        profile, status = upsert_llm_profile(session, user_id, updated_profile)
+    # Update existing profile with the new text
+    # The middleware will catch any exceptions and return a proper 500 response
+    updated_profile = await update_profile_data_from_text(
+        existing_profile.profile_data,
+        profile_text.text
+    )
 
-        return UserProfileResponse(status=status, profile=profile.profile_data)
-    except HTTPException:
-        # Re-raise HTTP exceptions
-        raise
-    except Exception as e:
-        # Log and wrap other exceptions
-        logger.error(f"Error updating profile: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+    # Save the updated profile
+    profile, status = await upsert_llm_profile(session, user_id, updated_profile)
+
+    return UserProfileResponse(status=status, profile=profile.profile_data)
 
 
 @router.patch("/{user_id}/profile", response_model=UserProfileResponse)
@@ -147,7 +133,7 @@ async def update_user_profile(
     Update an existing user profile directly with provided data.
     """
     # Check if user exists
-    db_user = session.get(User, user_id)
+    db_user = await session.get(User, user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -159,7 +145,7 @@ async def update_user_profile(
         )
 
     # Get existing profile
-    existing_profile = get_llm_profile(session, user_id)
+    existing_profile = await get_llm_profile(session, user_id)
     if not existing_profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
@@ -175,7 +161,7 @@ async def update_user_profile(
             del updated_data[key]
 
     # Upsert the updated profile
-    profile, status = upsert_llm_profile(session, user_id, updated_data)
+    profile, status = await upsert_llm_profile(session, user_id, updated_data)
 
     return UserProfileResponse(status=status, profile=profile.profile_data)
 
@@ -190,7 +176,7 @@ async def get_user_profile(
     Get the user profile summary generated by the LLM.
     """
     # Check if user exists
-    db_user = session.get(User, user_id)
+    db_user = await session.get(User, user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -202,26 +188,19 @@ async def get_user_profile(
         )
 
     # Get the profile
-    db_profile = get_llm_profile(session, user_id)
+    db_profile = await get_llm_profile(session, user_id)
     if not db_profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
     # Generate profile summary
-    try:
-        summary = await summarize_profile_data(db_profile.profile_data)
+    # The middleware will catch any exceptions and return a proper 500 response
+    summary = await summarize_profile_data(db_profile.profile_data)
 
-        # Create a UserLLMProfileSummary instance for the response
-        profile_summary = UserLLMProfileSummary(
-            user_id=db_profile.user_id,
-            profile_summary=summary,
-            updated_at=db_profile.updated_at
-        )
+    # Create a UserLLMProfileSummary instance for the response
+    profile_summary = UserLLMProfileSummary(
+        user_id=db_profile.user_id,
+        profile_summary=summary,
+        updated_at=db_profile.updated_at
+    )
 
-        return profile_summary
-    except Exception as e:
-        # If summarization fails, log the error and fail the request
-        logger.error(f"Failed to summarize profile: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="Unable to generate profile summary. Please try again later."
-        )
+    return profile_summary
