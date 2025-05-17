@@ -1,29 +1,19 @@
-import {
-  Box,
-  Button as ChakraButton,
-  Flex,
-  Heading,
-  Input,
-  Stack,
-  Text,
-  Textarea,
-} from "@chakra-ui/react"
+import { Box, Heading, Stack, Text, Textarea } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
-import { FiPlus, FiTrash2 } from "react-icons/fi"
+import { useState } from "react"
+import "./profile.css"
 
 import {
   ApiError,
   UserLLMProfileSummary,
-  UserProfileResponse,
+  type UserProfileResponse,
   UserProfileService,
   type UserPublic,
   UsersService,
 } from "@/client"
 import { Button } from "@/components/ui/button"
 import { useColorModeValue } from "@/components/ui/color-mode"
-import { Field } from "@/components/ui/field"
 import useCustomToast from "@/hooks/useCustomToast"
 
 export const Route = createFileRoute("/_layout/profile")({
@@ -77,7 +67,9 @@ function ProfilePage() {
   // Submit profile text mutation
   const submitProfileMutation = useMutation({
     mutationFn: (text: string) => {
-      const method = hasProfile ? 'updateProfileFromText' : 'createProfileFromText'
+      const method = hasProfile
+        ? "updateProfileFromText"
+        : "createProfileFromText"
       return UserProfileService[method]({
         userId: currentUser?.id || "",
         requestBody: { text },
@@ -121,7 +113,7 @@ function ProfilePage() {
       ) : hasProfile ? (
         <Box
           mb={8}
-          p={4}
+          p={6}
           borderWidth="1px"
           borderRadius="md"
           bg={boxBg}
@@ -131,8 +123,42 @@ function ProfilePage() {
           <Heading size="md" mb={4}>
             Your Profile Summary
           </Heading>
-          <Box whiteSpace="pre-wrap">
-            <Text>{profileSummary}</Text>
+          <Box whiteSpace="pre-wrap" className="profile-summary">
+            {profileSummary.split("\n\n").map((paragraph, i) => {
+              // Check if this is a section header
+              if (paragraph.trim().match(/^[A-Z][A-Za-z\s]+:$/)) {
+                return (
+                  <Heading as="h2" size="md" mt={i > 0 ? 5 : 2} mb={2} key={i}>
+                    {paragraph}
+                  </Heading>
+                )
+              }
+
+              // Check if this paragraph contains bullet points
+              if (paragraph.includes("- ")) {
+                const items = paragraph
+                  .split("\n")
+                  .filter((line) => line.trim())
+                return (
+                  <Box key={i} mb={4}>
+                    <Box as="ul" pl={6} mb={3}>
+                      {items.map((item, j) => (
+                        <Box as="li" key={j} listStyleType="disc" mb={1} ml={2}>
+                          {item.replace(/^- /, "")}
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )
+              }
+
+              // Regular paragraph
+              return (
+                <Text key={i} mb={3}>
+                  {paragraph}
+                </Text>
+              )
+            })}
           </Box>
         </Box>
       ) : (

@@ -249,26 +249,33 @@ DOUBLE CHECK your response format before submitting.
 def summarize_profile_data(profile_data: dict[str, Any]) -> str:
     """
     Sends a request to the Ollama API to summarize profile data into a readable form.
-    
+
     Args:
         profile_data: The structured profile data from the database
-        
+
     Returns:
         A human-readable summary of the profile
-        
+
     Raises:
         Exception: If the API call fails or the response cannot be parsed
     """
     # Convert profile data to a formatted string
     profile_str = json.dumps(profile_data, indent=2)
-    
+
     prompt = f"""
-    You are AskYenta, an assistant that summarizes user profile data into a readable, human-friendly format.
-    Organize the information into clear sections and use natural language.
-    Only include information present in the profile data.
-    
-    User Profile Data: {profile_str}
-    """
+You are AskYenta, a witty but kind assistant. You’re helping a user review their profile.
+Take the following structured data and turn it into a short, engaging description they can see and edit.
+Use natural language, not labels or lists.
+
+Be warm, expressive, and concise. If a section is missing, don’t mention it.
+
+Here is the profile data:
+
+{profile_str}
+
+Write the user’s profile summary in a way that feels personal and human, like something they’d be proud to show someone new.
+"""
+
 
     payload = {
         "model": DEFAULT_MODEL,
@@ -279,10 +286,10 @@ def summarize_profile_data(profile_data: dict[str, Any]) -> str:
     try:
         response = requests.post(OLLAMA_API_URL_GENERATE, json=payload)
         response.raise_for_status()
-        
+
         result = response.json()
         summary = result.get("response", "")
-        
+
         return summary
     except requests.RequestException as e:
         logger.error(f"API request error in summarize_profile_data: {str(e)}", exc_info=True)
@@ -296,29 +303,29 @@ def update_profile_from_text(existing_profile: dict[str, Any], text: str) -> dic
     """
     Sends a request to the Ollama API to update an existing profile based on new text.
     The LLM will intelligently merge the new information with the existing profile.
-    
+
     Args:
         existing_profile: The existing profile data
         text: The new text information to incorporate
-        
+
     Returns:
         The updated profile data
-        
+
     Raises:
         Exception: If the API call fails or the response cannot be parsed as JSON
     """
     # Convert existing profile to a formatted string
     profile_str = json.dumps(existing_profile, indent=2)
-    
+
     prompt = f"""
     You are AskYenta, an assistant that updates user profile data based on new information.
-    
+
     EXISTING PROFILE:
     {profile_str}
-    
+
     NEW INFORMATION:
     {text}
-    
+
     INSTRUCTIONS:
     1. Analyze the new information and determine what should be updated in the existing profile.
     2. Return an updated JSON object that intelligently merges the existing profile with the new information.

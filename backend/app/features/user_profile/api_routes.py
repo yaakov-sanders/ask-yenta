@@ -1,14 +1,19 @@
-import uuid
 import logging
+import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
 from app.features.core.api_deps import CurrentUser, SessionDep
 from app.features.user_profile.crud import get_llm_profile, upsert_llm_profile
-from app.features.user_profile.llm import parse_profile_from_text, summarize_profile_data, update_profile_from_text as update_profile_data_from_text
+from app.features.user_profile.llm import (
+    parse_profile_from_text,
+    summarize_profile_data,
+)
+from app.features.user_profile.llm import (
+    update_profile_from_text as update_profile_data_from_text,
+)
 from app.features.user_profile.models import (
-    UserLLMProfileRead,
     UserLLMProfileSummary,
     UserProfileResponse,
     UserProfileText,
@@ -32,7 +37,7 @@ async def create_profile_from_text(
     """
     Create a new user profile from free-form text, which will be parsed by an LLM
     into structured JSON and stored in the database.
-    
+
     Returns 409 Conflict if a profile already exists for this user.
     """
     # Check if user exists
@@ -50,17 +55,17 @@ async def create_profile_from_text(
     try:
         # Check if the user already has a profile
         existing_profile = get_llm_profile(session, user_id)
-        
+
         if existing_profile:
             # Return conflict if profile already exists
             raise HTTPException(
-                status_code=409, 
+                status_code=409,
                 detail="Profile already exists. Use PUT to update an existing profile."
             )
-        
+
         # Parse the free-form text using LLM for new profile
         parsed_profile = parse_profile_from_text(profile_text.text)
-        
+
         # Create a new profile
         profile, status = upsert_llm_profile(session, user_id, parsed_profile)
 
@@ -83,10 +88,10 @@ async def update_profile_from_text(
 ) -> Any:
     """
     Update an existing user profile with free-form text.
-    
+
     The LLM will analyze the existing profile and the new text,
     then intelligently merge them to create an updated profile.
-    
+
     Returns 404 Not Found if no profile exists for this user.
     """
     # Check if user exists
@@ -104,20 +109,20 @@ async def update_profile_from_text(
     try:
         # Get the existing profile
         existing_profile = get_llm_profile(session, user_id)
-        
+
         if not existing_profile:
             # Return not found if profile doesn't exist
             raise HTTPException(
-                status_code=404, 
+                status_code=404,
                 detail="Profile not found. Use POST to create a new profile."
             )
-        
+
         # Update existing profile with the new text
         updated_profile = update_profile_data_from_text(
-            existing_profile.profile_data, 
+            existing_profile.profile_data,
             profile_text.text
         )
-        
+
         # Save the updated profile
         profile, status = upsert_llm_profile(session, user_id, updated_profile)
 
@@ -200,18 +205,18 @@ async def get_user_profile(
     db_profile = get_llm_profile(session, user_id)
     if not db_profile:
         raise HTTPException(status_code=404, detail="Profile not found")
-    
+
     # Generate profile summary
     try:
         summary = summarize_profile_data(db_profile.profile_data)
-        
+
         # Create a UserLLMProfileSummary instance for the response
         profile_summary = UserLLMProfileSummary(
             user_id=db_profile.user_id,
             profile_summary=summary,
             updated_at=db_profile.updated_at
         )
-        
+
         return profile_summary
     except Exception as e:
         # If summarization fails, log the error and fail the request

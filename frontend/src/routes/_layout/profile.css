@@ -1,0 +1,44 @@
+.profile-summary {
+  line-height: 1.6;
+}
+
+.profile-summary h2 {
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #4299e1; /* Chakra blue.500 */
+}
+
+.profile-summary h2:first-of-type {
+  margin-top: 0.5rem;
+}
+
+.profile-summary p {
+  margin-bottom: 1rem;
+}
+
+.profile-summary ul {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.profile-summary li {
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+
+.profile-summary ul li::before {
+  content: "•";
+  color: #4299e1; /* Chakra blue.500 */
+  font-weight: bold;
+  display: inline-block;
+  width: 1rem;
+  margin-left: -1rem;
+}
+
+/* Add a subtle divider between sections */
+.profile-summary h2 + h2 {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(160, 174, 192, 0.2); /* Chakra gray.300 with opacity */
+}
