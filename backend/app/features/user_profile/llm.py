@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any
 
-import requests
+import aiohttp
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ DEFAULT_MODEL = "llama3.2:latest"
 MAX_RETRIES = 2  # Maximum number of retries for malformed JSON
 
 
-def parse_profile_from_text(text: str) -> dict[str, Any]:
+async def parse_profile_from_text(text: str) -> dict[str, Any]:
     """
     Sends a POST request to the Ollama API to parse free-form user text into structured JSON.
     Uses model: llama3:latest, stream: false
@@ -45,48 +45,49 @@ def parse_profile_from_text(text: str) -> dict[str, Any]:
     }
 
     try:
-        response = requests.post(OLLAMA_API_URL_GENERATE, json=payload)
-        response.raise_for_status()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(OLLAMA_API_URL_GENERATE, json=payload) as response:
+                response.raise_for_status()
 
-        # Log the raw response for debugging
-        logger.info(f"API response status: {response.status_code}")
-        logger.info(f"Raw API response content: {response.content[:1000]}")  # First 1000 chars
-
-        # Parse the response
-        try:
-            result = response.json()
-            logger.info(f"Successfully parsed API response: {result}")
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse API response as JSON: {str(e)}")
-            logger.error(f"Response content: {response.content.decode('utf-8', errors='replace')}")
-            raise Exception(f"Invalid JSON response from Ollama API: {str(e)}")
-
-        response_text = result.get("response", "{}")
-
-        # Log the extracted text
-        logger.info(f"Extracted response text: {response_text[:1000]}")  # First 1000 chars
-
-        # Extract JSON from response
-        # We need to handle the case where the LLM outputs additional text before/after the JSON
-        try:
-            # Try to parse directly first
-            parsed_json = json.loads(response_text)
-            return parsed_json
-        except json.JSONDecodeError:
-            # If direct parsing fails, try to extract JSON from the string
-            # Look for the first '{' and the last '}'
-            start_idx = response_text.find('{')
-            end_idx = response_text.rfind('}')
-
-            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-                json_str = response_text[start_idx:end_idx+1]
+                # Log the raw response for debugging
+                logger.info(f"API response status: {response.status}")
+                
+                # Parse the response
                 try:
-                    return json.loads(json_str)
+                    result = await response.json()
+                    logger.info(f"Successfully parsed API response: {result}")
+                except json.JSONDecodeError as e:
+                    response_text = await response.text()
+                    logger.error(f"Failed to parse API response as JSON: {str(e)}")
+                    logger.error(f"Response content: {response_text}")
+                    raise Exception(f"Invalid JSON response from Ollama API: {str(e)}")
+
+                response_text = result.get("response", "{}")
+
+                # Log the extracted text
+                logger.info(f"Extracted response text: {response_text[:1000]}")  # First 1000 chars
+
+                # Extract JSON from response
+                # We need to handle the case where the LLM outputs additional text before/after the JSON
+                try:
+                    # Try to parse directly first
+                    parsed_json = json.loads(response_text)
+                    return parsed_json
                 except json.JSONDecodeError:
-                    # If still can't parse, return empty dict
+                    # If direct parsing fails, try to extract JSON from the string
+                    # Look for the first '{' and the last '}'
+                    start_idx = response_text.find('{')
+                    end_idx = response_text.rfind('}')
+
+                    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                        json_str = response_text[start_idx:end_idx+1]
+                        try:
+                            return json.loads(json_str)
+                        except json.JSONDecodeError:
+                            # If still can't parse, return empty dict
+                            return {}
                     return {}
-            return {}
-    except requests.RequestException as e:
+    except aiohttp.ClientError as e:
         # Handle API request errors
         logger.error(f"API request error: {str(e)}", exc_info=True)
         raise Exception(f"Error calling Ollama API: {str(e)}")
@@ -96,10 +97,11 @@ def parse_profile_from_text(text: str) -> dict[str, Any]:
         raise Exception(f"Error processing LLM response: {str(e)}")
 
 
-def chat_with_memory(
+async def chat_with_memory(
     user_message: str,
     summary: str,
-    conversation_history: list[dict[str, str]]
+    conversation_history: list[dict[str, str]],
+    user_profile: dict[str, Any] = None
 ) -> tuple[str, str]:
     """
     Sends a chat request to the Ollama API with memory (summary + recent messages).
@@ -108,6 +110,7 @@ def chat_with_memory(
         user_message: The new message from the user
         summary: The current summary of the conversation
         conversation_history: List of previous messages as {"role": "user|assistant", "content": "..."}
+        user_profile: The user's LLM profile data (optional)
 
     Returns:
         Tuple of (assistant_reply, updated_summary)
@@ -123,10 +126,16 @@ def chat_with_memory(
             # Prepare message history
             messages = []
 
+            # Format user profile data if available
+            profile_info = ""
+            if user_profile:
+                profile_info = "\nUser Profile Information:\n"
+                profile_info += json.dumps(user_profile, indent=2)
+
             # Add system message with user summary and strict JSON format instructions
             system_message_content = f"""You are Yenta. Here is what you remember about this user:
 
-{summary}
+{summary}{profile_info}
 
 IMPORTANT FORMATTING INSTRUCTIONS:
 YOU MUST RESPOND IN THE FOLLOWING JSON FORMAT WITH NO EXCEPTIONS:
@@ -175,62 +184,64 @@ DOUBLE CHECK your response format before submitting.
             }
 
             # Call Ollama API
-            response = requests.post(OLLAMA_API_URL_CHAT, json=payload)
-            response.raise_for_status()
+            async with aiohttp.ClientSession() as session:
+                async with session.post(OLLAMA_API_URL_CHAT, json=payload) as response:
+                    response.raise_for_status()
 
-            # Log the raw response content for debugging
-            logger.info(f"Raw API response status: {response.status_code}")
-            logger.info(f"Raw API response content: {response.content[:1000]}")  # Log first 1000 chars in case it's large
+                    # Log the raw response content for debugging
+                    logger.info(f"Raw API response status: {response.status}")
+                    response_content = await response.text()
+                    logger.info(f"Raw API response content: {response_content[:1000]}")  # Log first 1000 chars in case it's large
 
-            # Parse the response
-            try:
-                result = response.json()
-                logger.info(f"Successfully parsed API response: {result}")
-            except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse API response as JSON: {str(e)}")
-                logger.error(f"Response content: {response.content.decode('utf-8', errors='replace')}")
-                raise Exception(f"Invalid JSON response from Ollama API: {str(e)}")
-
-            response_text = result.get("message", {}).get("content", "{}")
-
-            # Log the extracted text before JSON parsing
-            logger.info(f"Extracted response text: {response_text[:1000]}")
-
-            # Extract JSON from the response
-            try:
-                # Find JSON in the response text
-                start_idx = response_text.find('{')
-                end_idx = response_text.rfind('}')
-
-                logger.info(f"JSON start index: {start_idx}, end index: {end_idx}")
-
-                if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-                    json_str = response_text[start_idx:end_idx+1]
-                    logger.info(f"Extracted JSON string: {json_str[:1000]}")  # Log the extracted JSON
-
+                    # Parse the response
                     try:
-                        parsed_response = json.loads(json_str)
-                        logger.info(f"Successfully parsed JSON: {parsed_response}")
-
-                        reply = parsed_response.get("reply", "Sorry, I couldn't generate a proper response.")
-                        updated_summary = parsed_response.get("updated_summary", summary)
-
-                        return reply, updated_summary
+                        result = await response.json()
+                        logger.info(f"Successfully parsed API response: {result}")
                     except json.JSONDecodeError as e:
-                        last_error = f"JSON parsing error: {str(e)}"
+                        logger.error(f"Failed to parse API response as JSON: {str(e)}")
+                        logger.error(f"Response content: {response_content}")
+                        raise Exception(f"Invalid JSON response from Ollama API: {str(e)}")
+
+                    response_text = result.get("message", {}).get("content", "{}")
+
+                    # Log the extracted text before JSON parsing
+                    logger.info(f"Extracted response text: {response_text[:1000]}")
+
+                    # Extract JSON from the response
+                    try:
+                        # Find JSON in the response text
+                        start_idx = response_text.find('{')
+                        end_idx = response_text.rfind('}')
+
+                        logger.info(f"JSON start index: {start_idx}, end index: {end_idx}")
+
+                        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                            json_str = response_text[start_idx:end_idx+1]
+                            logger.info(f"Extracted JSON string: {json_str[:1000]}")  # Log the extracted JSON
+
+                            try:
+                                parsed_response = json.loads(json_str)
+                                logger.info(f"Successfully parsed JSON: {parsed_response}")
+
+                                reply = parsed_response.get("reply", "Sorry, I couldn't generate a proper response.")
+                                updated_summary = parsed_response.get("updated_summary", summary)
+
+                                return reply, updated_summary
+                            except json.JSONDecodeError as e:
+                                last_error = f"JSON parsing error: {str(e)}"
+                                logger.error(last_error, exc_info=True)
+                                raise Exception(last_error)
+                        else:
+                            last_error = "No JSON object found in response text"
+                            logger.error(last_error)
+                            raise Exception(last_error)
+                    except (json.JSONDecodeError, ValueError) as e:
+                        # If can't parse as JSON, use the whole response as reply and keep old summary
+                        last_error = f"JSON processing error: {str(e)}"
                         logger.error(last_error, exc_info=True)
                         raise Exception(last_error)
-                else:
-                    last_error = "No JSON object found in response text"
-                    logger.error(last_error)
-                    raise Exception(last_error)
-            except (json.JSONDecodeError, ValueError) as e:
-                # If can't parse as JSON, use the whole response as reply and keep old summary
-                last_error = f"JSON processing error: {str(e)}"
-                logger.error(last_error, exc_info=True)
-                raise Exception(last_error)
 
-        except requests.RequestException as e:
+        except aiohttp.ClientError as e:
             # Handle API request errors - these are not retryable
             logger.error(f"API request error in chat_with_memory: {str(e)}", exc_info=True)
             raise Exception(f"Error calling Ollama API: {str(e)}")
@@ -246,7 +257,7 @@ DOUBLE CHECK your response format before submitting.
     raise Exception(f"Failed to get valid JSON after {MAX_RETRIES + 1} attempts. Last error: {last_error}")
 
 
-def summarize_profile_data(profile_data: dict[str, Any]) -> str:
+async def summarize_profile_data(profile_data: dict[str, Any]) -> str:
     """
     Sends a request to the Ollama API to summarize profile data into a readable form.
 
@@ -263,19 +274,18 @@ def summarize_profile_data(profile_data: dict[str, Any]) -> str:
     profile_str = json.dumps(profile_data, indent=2)
 
     prompt = f"""
-You are AskYenta, a witty but kind assistant. You’re helping a user review their profile.
+You are AskYenta, a witty but kind assistant. You're helping a user review their profile.
 Take the following structured data and turn it into a short, engaging description they can see and edit.
 Use natural language, not labels or lists.
 
-Be warm, expressive, and concise. If a section is missing, don’t mention it.
+Be warm, expressive, and concise. If a section is missing, don't mention it.
 
 Here is the profile data:
 
 {profile_str}
 
-Write the user’s profile summary in a way that feels personal and human, like something they’d be proud to show someone new.
+Write the user's profile summary in a way that feels personal and human, like something they'd be proud to show someone new.
 """
-
 
     payload = {
         "model": DEFAULT_MODEL,
@@ -284,14 +294,15 @@ Write the user’s profile summary in a way that feels personal and human, like 
     }
 
     try:
-        response = requests.post(OLLAMA_API_URL_GENERATE, json=payload)
-        response.raise_for_status()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(OLLAMA_API_URL_GENERATE, json=payload) as response:
+                response.raise_for_status()
 
-        result = response.json()
-        summary = result.get("response", "")
+                result = await response.json()
+                summary = result.get("response", "")
 
-        return summary
-    except requests.RequestException as e:
+                return summary
+    except aiohttp.ClientError as e:
         logger.error(f"API request error in summarize_profile_data: {str(e)}", exc_info=True)
         raise Exception(f"Error calling Ollama API: {str(e)}")
     except Exception as e:
@@ -299,7 +310,7 @@ Write the user’s profile summary in a way that feels personal and human, like 
         raise Exception(f"Error processing LLM response: {str(e)}")
 
 
-def update_profile_from_text(existing_profile: dict[str, Any], text: str) -> dict[str, Any]:
+async def update_profile_from_text(existing_profile: dict[str, Any], text: str) -> dict[str, Any]:
     """
     Sends a request to the Ollama API to update an existing profile based on new text.
     The LLM will intelligently merge the new information with the existing profile.
@@ -341,42 +352,44 @@ def update_profile_from_text(existing_profile: dict[str, Any], text: str) -> dic
     }
 
     try:
-        response = requests.post(OLLAMA_API_URL_GENERATE, json=payload)
-        response.raise_for_status()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(OLLAMA_API_URL_GENERATE, json=payload) as response:
+                response.raise_for_status()
 
-        # Log the raw response for debugging
-        logger.info(f"API response status: {response.status_code}")
-        logger.info(f"Raw API response content: {response.content[:1000]}")
+                # Log the raw response for debugging
+                logger.info(f"API response status: {response.status}")
+                response_content = await response.text()
+                logger.info(f"Raw API response content: {response_content[:1000]}")
 
-        # Parse the response
-        result = response.json()
-        response_text = result.get("response", "{}")
+                # Parse the response
+                result = await response.json()
+                response_text = result.get("response", "{}")
 
-        # Log the extracted text
-        logger.info(f"Extracted response text: {response_text[:1000]}")
+                # Log the extracted text
+                logger.info(f"Extracted response text: {response_text[:1000]}")
 
-        # Extract JSON from response
-        try:
-            # Try to parse directly first
-            parsed_json = json.loads(response_text)
-            return parsed_json
-        except json.JSONDecodeError:
-            # If direct parsing fails, try to extract JSON from the string
-            # Look for the first '{' and the last '}'
-            start_idx = response_text.find('{')
-            end_idx = response_text.rfind('}')
-
-            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-                json_str = response_text[start_idx:end_idx+1]
+                # Extract JSON from response
                 try:
-                    return json.loads(json_str)
+                    # Try to parse directly first
+                    parsed_json = json.loads(response_text)
+                    return parsed_json
                 except json.JSONDecodeError:
-                    # If still can't parse, return the existing profile to avoid data loss
-                    logger.error("Failed to parse LLM response as JSON, returning original profile")
+                    # If direct parsing fails, try to extract JSON from the string
+                    # Look for the first '{' and the last '}'
+                    start_idx = response_text.find('{')
+                    end_idx = response_text.rfind('}')
+
+                    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                        json_str = response_text[start_idx:end_idx+1]
+                        try:
+                            return json.loads(json_str)
+                        except json.JSONDecodeError:
+                            # If still can't parse, return the existing profile to avoid data loss
+                            logger.error("Failed to parse LLM response as JSON, returning original profile")
+                            return existing_profile
+                    logger.error("Failed to extract JSON from LLM response, returning original profile")
                     return existing_profile
-            logger.error("Failed to extract JSON from LLM response, returning original profile")
-            return existing_profile
-    except requests.RequestException as e:
+    except aiohttp.ClientError as e:
         # Handle API request errors
         logger.error(f"API request error: {str(e)}", exc_info=True)
         raise Exception(f"Error calling Ollama API: {str(e)}")

@@ -64,7 +64,7 @@ async def create_profile_from_text(
             )
 
         # Parse the free-form text using LLM for new profile
-        parsed_profile = parse_profile_from_text(profile_text.text)
+        parsed_profile = await parse_profile_from_text(profile_text.text)
 
         # Create a new profile
         profile, status = upsert_llm_profile(session, user_id, parsed_profile)
@@ -118,7 +118,7 @@ async def update_profile_from_text(
             )
 
         # Update existing profile with the new text
-        updated_profile = update_profile_data_from_text(
+        updated_profile = await update_profile_data_from_text(
             existing_profile.profile_data,
             profile_text.text
         )
@@ -208,7 +208,7 @@ async def get_user_profile(
 
     # Generate profile summary
     try:
-        summary = summarize_profile_data(db_profile.profile_data)
+        summary = await summarize_profile_data(db_profile.profile_data)
 
         # Create a UserLLMProfileSummary instance for the response
         profile_summary = UserLLMProfileSummary(

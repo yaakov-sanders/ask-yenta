@@ -14,6 +14,7 @@ from app.features.conversation_memory.models import (
 )
 from app.features.core.api_deps import CurrentUser, SessionDep
 from app.features.user_profile.llm import chat_with_memory as llm_chat_with_memory
+from app.features.user_profile.crud import get_llm_profile
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -63,6 +64,7 @@ async def chat_with_memory(
     """
     Chat with the LLM using hybrid memory (summary + recent messages).
     Updates the conversation memory and returns the assistant's reply with the updated summary.
+    Includes user's LLM profile if available.
     """
     user_id = chat_request.user_id
     user_message = chat_request.message
@@ -74,12 +76,17 @@ async def chat_with_memory(
     summary = memory.summary if memory and memory.summary else "No previous context available."
     messages = memory.messages if memory and memory.messages else []
 
+    # Get user's LLM profile if available
+    user_profile = get_llm_profile(session, user_id)
+    profile_data = user_profile.profile_data if user_profile else {}
+
     try:
         # Call the centralized LLM function
-        reply, updated_summary = llm_chat_with_memory(
+        reply, updated_summary = await llm_chat_with_memory(
             user_message=user_message,
             summary=summary,
-            conversation_history=messages
+            conversation_history=messages,
+            user_profile=profile_data
         )
 
         # Create new message object
