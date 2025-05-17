@@ -47,3 +47,10 @@ class LLMResponse(BaseModel):
 
 class UserLLMProfileRead(UserLLMProfileBase):
     user_id: uuid.UUID
+    profile_summary: str | None = None
+
+
+class UserLLMProfileSummary(BaseModel):
+    user_id: uuid.UUID
+    profile_summary: str
+    updated_at: datetime

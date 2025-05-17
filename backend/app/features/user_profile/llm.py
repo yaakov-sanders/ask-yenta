@@ -245,3 +245,136 @@ DOUBLE CHECK your response format before submitting.
     logger.error(f"Error processing LLM chat response after {MAX_RETRIES + 1} attempts: {last_error}")
     raise Exception(f"Failed to get valid JSON after {MAX_RETRIES + 1} attempts. Last error: {last_error}")
 
+
+def summarize_profile_data(profile_data: dict[str, Any]) -> str:
+    """
+    Sends a request to the Ollama API to summarize profile data into a readable form.
+    
+    Args:
+        profile_data: The structured profile data from the database
+        
+    Returns:
+        A human-readable summary of the profile
+        
+    Raises:
+        Exception: If the API call fails or the response cannot be parsed
+    """
+    # Convert profile data to a formatted string
+    profile_str = json.dumps(profile_data, indent=2)
+    
+    prompt = f"""
+    You are AskYenta, an assistant that summarizes user profile data into a readable, human-friendly format.
+    Organize the information into clear sections and use natural language.
+    Only include information present in the profile data.
+    
+    User Profile Data: {profile_str}
+    """
+
+    payload = {
+        "model": DEFAULT_MODEL,
+        "prompt": prompt,
+        "stream": False
+    }
+
+    try:
+        response = requests.post(OLLAMA_API_URL_GENERATE, json=payload)
+        response.raise_for_status()
+        
+        result = response.json()
+        summary = result.get("response", "")
+        
+        return summary
+    except requests.RequestException as e:
+        logger.error(f"API request error in summarize_profile_data: {str(e)}", exc_info=True)
+        raise Exception(f"Error calling Ollama API: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error processing LLM response: {str(e)}", exc_info=True)
+        raise Exception(f"Error processing LLM response: {str(e)}")
+
+
+def update_profile_from_text(existing_profile: dict[str, Any], text: str) -> dict[str, Any]:
+    """
+    Sends a request to the Ollama API to update an existing profile based on new text.
+    The LLM will intelligently merge the new information with the existing profile.
+    
+    Args:
+        existing_profile: The existing profile data
+        text: The new text information to incorporate
+        
+    Returns:
+        The updated profile data
+        
+    Raises:
+        Exception: If the API call fails or the response cannot be parsed as JSON
+    """
+    # Convert existing profile to a formatted string
+    profile_str = json.dumps(existing_profile, indent=2)
+    
+    prompt = f"""
+    You are AskYenta, an assistant that updates user profile data based on new information.
+    
+    EXISTING PROFILE:
+    {profile_str}
+    
+    NEW INFORMATION:
+    {text}
+    
+    INSTRUCTIONS:
+    1. Analyze the new information and determine what should be updated in the existing profile.
+    2. Return an updated JSON object that intelligently merges the existing profile with the new information.
+    3. Keep existing fields that aren't mentioned in the new information.
+    4. Update or add fields based on the new information.
+    5. Return ONLY the updated JSON object, with no additional text or explanation.
+    """
+
+    payload = {
+        "model": DEFAULT_MODEL,
+        "prompt": prompt,
+        "stream": False
+    }
+
+    try:
+        response = requests.post(OLLAMA_API_URL_GENERATE, json=payload)
+        response.raise_for_status()
+
+        # Log the raw response for debugging
+        logger.info(f"API response status: {response.status_code}")
+        logger.info(f"Raw API response content: {response.content[:1000]}")
+
+        # Parse the response
+        result = response.json()
+        response_text = result.get("response", "{}")
+
+        # Log the extracted text
+        logger.info(f"Extracted response text: {response_text[:1000]}")
+
+        # Extract JSON from response
+        try:
+            # Try to parse directly first
+            parsed_json = json.loads(response_text)
+            return parsed_json
+        except json.JSONDecodeError:
+            # If direct parsing fails, try to extract JSON from the string
+            # Look for the first '{' and the last '}'
+            start_idx = response_text.find('{')
+            end_idx = response_text.rfind('}')
+
+            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                json_str = response_text[start_idx:end_idx+1]
+                try:
+                    return json.loads(json_str)
+                except json.JSONDecodeError:
+                    # If still can't parse, return the existing profile to avoid data loss
+                    logger.error("Failed to parse LLM response as JSON, returning original profile")
+                    return existing_profile
+            logger.error("Failed to extract JSON from LLM response, returning original profile")
+            return existing_profile
+    except requests.RequestException as e:
+        # Handle API request errors
+        logger.error(f"API request error: {str(e)}", exc_info=True)
+        raise Exception(f"Error calling Ollama API: {str(e)}")
+    except Exception as e:
+        # Handle general errors
+        logger.error(f"Error processing LLM response: {str(e)}", exc_info=True)
+        raise Exception(f"Error processing LLM response: {str(e)}")
+

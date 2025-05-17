@@ -15,9 +15,11 @@ import { FiPlus, FiTrash2 } from "react-icons/fi"
 
 import {
   ApiError,
-  UserLLMProfileRead,
+  UserLLMProfileSummary,
+  UserProfileResponse,
   UserProfileService,
   type UserPublic,
+  UsersService,
 } from "@/client"
 import { Button } from "@/components/ui/button"
 import { useColorModeValue } from "@/components/ui/color-mode"
@@ -30,8 +32,6 @@ export const Route = createFileRoute("/_layout/profile")({
 
 function ProfilePage() {
   const [profileText, setProfileText] = useState("")
-  const [newProfileField, setNewProfileField] = useState({ key: "", value: "" })
-  const [fieldsToUpdate, setFieldsToUpdate] = useState<Record<string, any>>({})
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const queryClient = useQueryClient()
 
@@ -39,6 +39,7 @@ function ProfilePage() {
   // in the parent Layout component
   const { data: currentUser, isLoading: isLoadingUser } = useQuery<UserPublic>({
     queryKey: ["currentUser"],
+    queryFn: () => UsersService.readUserMe(),
   })
 
   // Color mode values
@@ -53,7 +54,7 @@ function ProfilePage() {
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) {
         // Return empty data for 404 errors
-        return { profile_data: {} }
+        return { profile_summary: "" }
       }
       showErrorToast("We couldn't load your profile. Please try again.")
       throw error
@@ -64,78 +65,40 @@ function ProfilePage() {
   const { data, isLoading } = useQuery({
     queryKey: ["userProfile", currentUser?.id],
     queryFn: () => {
-      if (!currentUser?.id) return Promise.resolve({ profile_data: {} })
+      if (!currentUser?.id) return Promise.resolve({ profile_summary: "" })
       return fetchUserProfile(currentUser.id)
     },
     enabled: !!currentUser?.id,
   })
 
-  const userProfile = data?.profile_data || {}
+  const profileSummary = data?.profile_summary || ""
+  const hasProfile = profileSummary !== ""
 
   // Submit profile text mutation
   const submitProfileMutation = useMutation({
-    mutationFn: (text: string) =>
-      UserProfileService.submitProfileText({
+    mutationFn: (text: string) => {
+      const method = hasProfile ? 'updateProfileFromText' : 'createProfileFromText'
+      return UserProfileService[method]({
         userId: currentUser?.id || "",
         requestBody: { text },
-      }),
+      })
+    },
     onSuccess: (response) => {
       queryClient.invalidateQueries({
         queryKey: ["userProfile", currentUser?.id],
       })
       setProfileText("")
-      showSuccessToast(`Your profile was successfully ${response.status}.`)
+      const status = (response as UserProfileResponse).status
+      showSuccessToast(`Your profile was successfully ${status}.`)
     },
     onError: () => {
       showErrorToast("We couldn't update your profile. Please try again.")
     },
   })
-
-  // Update profile fields mutation
-  const updateProfileMutation = useMutation({
-    mutationFn: (data: Record<string, any>) =>
-      UserProfileService.updateUserProfile({
-        userId: currentUser?.id || "",
-        requestBody: { data },
-      }),
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({
-        queryKey: ["userProfile", currentUser?.id],
-      })
-      setFieldsToUpdate({})
-      showSuccessToast(`Your profile was successfully ${response.status}.`)
-    },
-    onError: () => {
-      showErrorToast("We couldn't update your profile. Please try again.")
-    },
-  })
-
-  const handleUpdateProfileField = (key: string, value: any) => {
-    setFieldsToUpdate((prev) => ({
-      ...prev,
-      [key]: value,
-    }))
-  }
-
-  const handleAddField = () => {
-    if (newProfileField.key.trim() && newProfileField.value.trim()) {
-      handleUpdateProfileField(newProfileField.key, newProfileField.value)
-      setNewProfileField({ key: "", value: "" })
-    }
-  }
-
-  const handleRemoveField = (key: string) => {
-    handleUpdateProfileField(key, null)
-  }
 
   const handleSubmitProfile = () => {
     if (!currentUser?.id || !profileText.trim()) return
     submitProfileMutation.mutate(profileText)
-  }
-
-  const handleUpdateProfile = () => {
-    if (!currentUser?.id || Object.keys(fieldsToUpdate).length === 0) return
-    updateProfileMutation.mutate(fieldsToUpdate)
   }
 
   const isPageLoading = isLoadingUser || isLoading
@@ -155,7 +118,7 @@ function ProfilePage() {
         >
           <Text>Loading your profile...</Text>
         </Box>
-      ) : Object.keys(userProfile).length > 0 ? (
+      ) : hasProfile ? (
         <Box
           mb={8}
           p={4}
@@ -166,21 +129,10 @@ function ProfilePage() {
           boxShadow="sm"
         >
           <Heading size="md" mb={4}>
-            Your Current Profile
+            Your Profile Summary
           </Heading>
           <Box whiteSpace="pre-wrap">
-            {Object.entries(userProfile).map(([key, value]) => (
-              <Box key={key} mb={2}>
-                <Text as="span" fontWeight="bold">
-                  {key}:{" "}
-                </Text>
-                <Text as="span">
-                  {typeof value === "object"
-                    ? JSON.stringify(value)
-                    : String(value)}
-                </Text>
-              </Box>
-            ))}
+            <Text>{profileSummary}</Text>
           </Box>
         </Box>
       ) : (
@@ -199,100 +151,15 @@ function ProfilePage() {
         </Box>
       )}
 
-      {!isPageLoading && Object.keys(userProfile).length > 0 && (
-        <Box mb={8}>
-          <Heading size="md" mb={4}>
-            Edit Profile Fields
-          </Heading>
-          <Stack gap={4}>
-            {Object.entries(userProfile).map(([key, value]) => (
-              <Field key={key} label={key}>
-                <Flex>
-                  <Input
-                    defaultValue={
-                      typeof value === "object"
-                        ? JSON.stringify(value)
-                        : String(value)
-                    }
-                    onChange={(e) =>
-                      handleUpdateProfileField(key, e.target.value)
-                    }
-                    flex="1"
-                  />
-                  <ChakraButton
-                    aria-label="Remove field"
-                    ml={2}
-                    colorScheme="red"
-                    variant="outline"
-                    onClick={() => handleRemoveField(key)}
-                  >
-                    <FiTrash2 />
-                  </ChakraButton>
-                </Flex>
-              </Field>
-            ))}
-
-            <Box my={2} borderBottomWidth="1px" borderColor={boxBorderColor} />
-
-            <Flex>
-              <Field mr={2} label="New Field">
-                <Input
-                  placeholder="Field name"
-                  value={newProfileField.key}
-                  onChange={(e) =>
-                    setNewProfileField((prev) => ({
-                      ...prev,
-                      key: e.target.value,
-                    }))
-                  }
-                />
-              </Field>
-              <Field label="Value">
-                <Input
-                  placeholder="Field value"
-                  value={newProfileField.value}
-                  onChange={(e) =>
-                    setNewProfileField((prev) => ({
-                      ...prev,
-                      value: e.target.value,
-                    }))
-                  }
-                />
-              </Field>
-              <ChakraButton
-                aria-label="Add field"
-                mt="auto"
-                ml={2}
-                onClick={handleAddField}
-              >
-                <FiPlus />
-              </ChakraButton>
-            </Flex>
-
-            <Button
-              colorScheme="blue"
-              loading={updateProfileMutation.isPending}
-              onClick={handleUpdateProfile}
-              alignSelf="flex-start"
-              mt={2}
-            >
-              Update Profile
-            </Button>
-          </Stack>
-        </Box>
-      )}
-
       <Box my={6} borderBottomWidth="1px" borderColor={boxBorderColor} />
 
       <Stack gap={4}>
         <Heading size="md">
-          {Object.keys(userProfile).length > 0
-            ? "Rewrite Your Profile"
-            : "Create Your Profile"}
+          {hasProfile ? "Update Your Profile" : "Create Your Profile"}
         </Heading>
         <Text>
-          {Object.keys(userProfile).length > 0
-            ? "Alternatively, you can describe yourself in natural language and our AI will update your profile."
+          {hasProfile
+            ? "Tell us about yourself. Our AI will update your profile based on your description."
             : "Tell us about yourself. This information will be used to personalize your experience."}
         </Text>
         <Textarea
