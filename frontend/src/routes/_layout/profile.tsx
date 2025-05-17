@@ -34,7 +34,7 @@ function ProfilePage() {
   const [fieldsToUpdate, setFieldsToUpdate] = useState<Record<string, any>>({})
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const queryClient = useQueryClient()
-  
+
   // Get the current user from the query cache - this is guaranteed to be loaded
   // in the parent Layout component
   const { data: currentUser, isLoading: isLoadingUser } = useQuery<UserPublic>({
@@ -74,36 +74,40 @@ function ProfilePage() {
 
   // Submit profile text mutation
   const submitProfileMutation = useMutation({
-    mutationFn: (text: string) => 
+    mutationFn: (text: string) =>
       UserProfileService.submitProfileText({
         userId: currentUser?.id || "",
         requestBody: { text },
       }),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ["userProfile", currentUser?.id] })
+      queryClient.invalidateQueries({
+        queryKey: ["userProfile", currentUser?.id],
+      })
       setProfileText("")
       showSuccessToast(`Your profile was successfully ${response.status}.`)
     },
     onError: () => {
       showErrorToast("We couldn't update your profile. Please try again.")
-    }
+    },
   })
 
   // Update profile fields mutation
   const updateProfileMutation = useMutation({
-    mutationFn: (data: Record<string, any>) => 
+    mutationFn: (data: Record<string, any>) =>
       UserProfileService.updateUserProfile({
         userId: currentUser?.id || "",
         requestBody: { data },
       }),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ["userProfile", currentUser?.id] })
+      queryClient.invalidateQueries({
+        queryKey: ["userProfile", currentUser?.id],
+      })
       setFieldsToUpdate({})
       showSuccessToast(`Your profile was successfully ${response.status}.`)
     },
     onError: () => {
       showErrorToast("We couldn't update your profile. Please try again.")
-    }
+    },
   })
 
   const handleUpdateProfileField = (key: string, value: any) => {
@@ -139,17 +143,24 @@ function ProfilePage() {
   return (
     <Box maxW="800px" mx="auto" py={6}>
       <Heading mb={6}>My Profile</Heading>
-      
+
       {isPageLoading ? (
-        <Box mb={8} p={4} borderWidth="1px" borderRadius="md" bg={emptyBoxBg} borderColor={boxBorderColor}>
+        <Box
+          mb={8}
+          p={4}
+          borderWidth="1px"
+          borderRadius="md"
+          bg={emptyBoxBg}
+          borderColor={boxBorderColor}
+        >
           <Text>Loading your profile...</Text>
         </Box>
       ) : Object.keys(userProfile).length > 0 ? (
-        <Box 
-          mb={8} 
-          p={4} 
-          borderWidth="1px" 
-          borderRadius="md" 
+        <Box
+          mb={8}
+          p={4}
+          borderWidth="1px"
+          borderRadius="md"
           bg={boxBg}
           borderColor={boxBorderColor}
           boxShadow="sm"
@@ -164,18 +175,20 @@ function ProfilePage() {
                   {key}:{" "}
                 </Text>
                 <Text as="span">
-                  {typeof value === "object" ? JSON.stringify(value) : String(value)}
+                  {typeof value === "object"
+                    ? JSON.stringify(value)
+                    : String(value)}
                 </Text>
               </Box>
             ))}
           </Box>
         </Box>
       ) : (
-        <Box 
-          mb={8} 
-          p={4} 
-          borderWidth="1px" 
-          borderRadius="md" 
+        <Box
+          mb={8}
+          p={4}
+          borderWidth="1px"
+          borderRadius="md"
           bg={emptyBoxBg}
           borderColor={boxBorderColor}
           boxShadow="sm"
@@ -197,7 +210,9 @@ function ProfilePage() {
                 <Flex>
                   <Input
                     defaultValue={
-                      typeof value === "object" ? JSON.stringify(value) : String(value)
+                      typeof value === "object"
+                        ? JSON.stringify(value)
+                        : String(value)
                     }
                     onChange={(e) =>
                       handleUpdateProfileField(key, e.target.value)
@@ -216,12 +231,12 @@ function ProfilePage() {
                 </Flex>
               </Field>
             ))}
-            
+
             <Box my={2} borderBottomWidth="1px" borderColor={boxBorderColor} />
-            
+
             <Flex>
               <Field mr={2} label="New Field">
-                <Input 
+                <Input
                   placeholder="Field name"
                   value={newProfileField.key}
                   onChange={(e) =>
@@ -253,7 +268,7 @@ function ProfilePage() {
                 <FiPlus />
               </ChakraButton>
             </Flex>
-            
+
             <Button
               colorScheme="blue"
               loading={updateProfileMutation.isPending}
@@ -271,10 +286,12 @@ function ProfilePage() {
 
       <Stack gap={4}>
         <Heading size="md">
-          {Object.keys(userProfile).length > 0 ? "Rewrite Your Profile" : "Create Your Profile"}
+          {Object.keys(userProfile).length > 0
+            ? "Rewrite Your Profile"
+            : "Create Your Profile"}
         </Heading>
         <Text>
-          {Object.keys(userProfile).length > 0 
+          {Object.keys(userProfile).length > 0
             ? "Alternatively, you can describe yourself in natural language and our AI will update your profile."
             : "Tell us about yourself. This information will be used to personalize your experience."}
         </Text>
@@ -286,7 +303,7 @@ function ProfilePage() {
           bg={boxBg}
           borderColor={boxBorderColor}
         />
-        <Button 
+        <Button
           loading={submitProfileMutation.isPending}
           onClick={handleSubmitProfile}
           colorScheme="blue"

@@ -81,7 +81,7 @@ async def update_user_profile(
 
     # Merge the existing profile with the updates
     updated_data = existing_profile.profile_data.copy()
-    
+
     # Add or update fields
     for key, value in profile_update.data.items():
         if value is not None:

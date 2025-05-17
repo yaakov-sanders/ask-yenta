@@ -69,11 +69,12 @@ export const YentaChat = () => {
   // Fetch chat history when userId is available
   const chatHistoryQuery = useQuery<ChatHistoryResponse>({
     queryKey: ["chatHistory", userId, page, limit],
-    queryFn: () => ChatService.getChatHistory({
-      userId: userId,
-      limit: limit,
-      offset: page * limit
-    }),
+    queryFn: () =>
+      ChatService.getChatHistory({
+        userId: userId,
+        limit: limit,
+        offset: page * limit,
+      }),
     enabled: !!userId,
   })
 
@@ -83,15 +84,15 @@ export const YentaChat = () => {
       // Transform messages from API format to our Message interface format
       const transformedMessages = chatHistoryQuery.data.messages.map((msg) => ({
         role: msg.role || "assistant", // Default to assistant if role is missing
-        content: msg.content || "",    // Default to empty string if content is missing
-      }));
-      
+        content: msg.content || "", // Default to empty string if content is missing
+      }))
+
       // Clear messages if this is the first page (page 0)
       if (page === 0) {
-        setMessages(transformedMessages);
+        setMessages(transformedMessages)
       } else {
         // Append older messages
-        setMessages((prev) => [...transformedMessages, ...prev]);
+        setMessages((prev) => [...transformedMessages, ...prev])
       }
     }
   }, [chatHistoryQuery.data, page])
@@ -108,8 +109,8 @@ export const YentaChat = () => {
       ChatService.chatWithMemory({
         requestBody: {
           user_id: userId,
-          message: message
-        }
+          message: message,
+        },
       }),
     onSuccess: (data) => {
       appendMessage({ role: "assistant", content: data.reply })
