@@ -4,6 +4,10 @@ import type { CancelablePromise } from "./core/CancelablePromise"
 import { OpenAPI } from "./core/OpenAPI"
 import { request as __request } from "./core/request"
 import type {
+  ChatChatWithMemoryData,
+  ChatChatWithMemoryResponse,
+  ChatGetChatHistoryData,
+  ChatGetChatHistoryResponse,
   LoginLoginAccessTokenData,
   LoginLoginAccessTokenResponse,
   LoginRecoverPasswordData,
@@ -13,8 +17,14 @@ import type {
   LoginResetPasswordData,
   LoginResetPasswordResponse,
   LoginTestTokenResponse,
-  PrivateCreateUserData,
-  PrivateCreateUserResponse,
+  UserProfileGetUserProfileData,
+  UserProfileGetUserProfileResponse,
+  UserProfileSubmitProfileTextData,
+  UserProfileSubmitProfileTextResponse,
+  UserProfileUpdateUserProfileData,
+  UserProfileUpdateUserProfileResponse,
+  UsersCreatePrivateUserData,
+  UsersCreatePrivateUserResponse,
   UsersCreateUserData,
   UsersCreateUserResponse,
   UsersDeleteUserData,
@@ -27,16 +37,69 @@ import type {
   UsersReadUsersResponse,
   UsersRegisterUserData,
   UsersRegisterUserResponse,
-  UsersUpdatePasswordMeData,
-  UsersUpdatePasswordMeResponse,
   UsersUpdateUserData,
   UsersUpdateUserMeData,
   UsersUpdateUserMeResponse,
   UsersUpdateUserResponse,
   UtilsHealthCheckResponse,
-  UtilsTestEmailData,
-  UtilsTestEmailResponse,
 } from "./types.gen"
+
+export class ChatService {
+  /**
+   * Get Chat History
+   * Get chat history for a user with pagination.
+   * Returns the most recent messages first.
+   *
+   * - **user_id**: ID of the user to get chat history for
+   * - **limit**: Maximum number of messages to retrieve (default: 10, max: 50)
+   * - **offset**: Number of messages to skip for pagination (default: 0)
+   * @param data The data for the request.
+   * @param data.userId
+   * @param data.limit
+   * @param data.offset
+   * @returns ChatHistoryResponse Successful Response
+   * @throws ApiError
+   */
+  public static getChatHistory(
+    data: ChatGetChatHistoryData,
+  ): CancelablePromise<ChatGetChatHistoryResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/chat/history",
+      query: {
+        user_id: data.userId,
+        limit: data.limit,
+        offset: data.offset,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Chat With Memory
+   * Chat with the LLM using hybrid memory (summary + recent messages).
+   * Updates the conversation memory and returns the assistant's reply with the updated summary.
+   * @param data The data for the request.
+   * @param data.requestBody
+   * @returns ChatResponse Successful Response
+   * @throws ApiError
+   */
+  public static chatWithMemory(
+    data: ChatChatWithMemoryData,
+  ): CancelablePromise<ChatChatWithMemoryResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/chat",
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+}
 
 export class LoginService {
   /**
@@ -143,23 +206,77 @@ export class LoginService {
   }
 }
 
-export class PrivateService {
+export class UserProfileService {
   /**
-   * Create User
-   * Create a new user.
+   * Submit Profile Text
+   * Submit free-form text about a user, which will be parsed by an LLM
+   * into structured JSON and stored in the database.
    * @param data The data for the request.
+   * @param data.userId
    * @param data.requestBody
-   * @returns UserPublic Successful Response
+   * @returns UserProfileResponse Successful Response
    * @throws ApiError
    */
-  public static createUser(
-    data: PrivateCreateUserData,
-  ): CancelablePromise<PrivateCreateUserResponse> {
+  public static submitProfileText(
+    data: UserProfileSubmitProfileTextData,
+  ): CancelablePromise<UserProfileSubmitProfileTextResponse> {
     return __request(OpenAPI, {
       method: "POST",
-      url: "/api/v1/private/users/",
+      url: "/api/v1/users/{user_id}/profile-text",
+      path: {
+        user_id: data.userId,
+      },
       body: data.requestBody,
       mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Update User Profile
+   * Update an existing user profile directly with provided data.
+   * @param data The data for the request.
+   * @param data.userId
+   * @param data.requestBody
+   * @returns UserProfileResponse Successful Response
+   * @throws ApiError
+   */
+  public static updateUserProfile(
+    data: UserProfileUpdateUserProfileData,
+  ): CancelablePromise<UserProfileUpdateUserProfileResponse> {
+    return __request(OpenAPI, {
+      method: "PATCH",
+      url: "/api/v1/users/{user_id}/profile",
+      path: {
+        user_id: data.userId,
+      },
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Get User Profile
+   * Get the structured user profile.
+   * @param data The data for the request.
+   * @param data.userId
+   * @returns UserLLMProfileRead Successful Response
+   * @throws ApiError
+   */
+  public static getUserProfile(
+    data: UserProfileGetUserProfileData,
+  ): CancelablePromise<UserProfileGetUserProfileResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/users/{user_id}/profile",
+      path: {
+        user_id: data.userId,
+      },
       errors: {
         422: "Validation Error",
       },
@@ -264,28 +381,6 @@ export class UsersService {
   }
 
   /**
-   * Update Password Me
-   * Update own password.
-   * @param data The data for the request.
-   * @param data.requestBody
-   * @returns Message Successful Response
-   * @throws ApiError
-   */
-  public static updatePasswordMe(
-    data: UsersUpdatePasswordMeData,
-  ): CancelablePromise<UsersUpdatePasswordMeResponse> {
-    return __request(OpenAPI, {
-      method: "PATCH",
-      url: "/api/v1/users/me/password",
-      body: data.requestBody,
-      mediaType: "application/json",
-      errors: {
-        422: "Validation Error",
-      },
-    })
-  }
-
-  /**
    * Register User
    * Create new user without the need to be logged in.
    * @param data The data for the request.
@@ -378,32 +473,31 @@ export class UsersService {
       },
     })
   }
-}
 
-export class UtilsService {
   /**
-   * Test Email
-   * Test emails.
+   * Create Private User
+   * Create a new user through private endpoint.
    * @param data The data for the request.
-   * @param data.emailTo
-   * @returns Message Successful Response
+   * @param data.requestBody
+   * @returns UserPublic Successful Response
    * @throws ApiError
    */
-  public static testEmail(
-    data: UtilsTestEmailData,
-  ): CancelablePromise<UtilsTestEmailResponse> {
+  public static createPrivateUser(
+    data: UsersCreatePrivateUserData,
+  ): CancelablePromise<UsersCreatePrivateUserResponse> {
     return __request(OpenAPI, {
       method: "POST",
-      url: "/api/v1/utils/test-email/",
-      query: {
-        email_to: data.emailTo,
-      },
+      url: "/api/v1/users/private/",
+      body: data.requestBody,
+      mediaType: "application/json",
       errors: {
         422: "Validation Error",
       },
     })
   }
+}
 
+export class UtilsService {
   /**
    * Health Check
    * @returns boolean Successful Response
@@ -413,68 +507,6 @@ export class UtilsService {
     return __request(OpenAPI, {
       method: "GET",
       url: "/api/v1/utils/health-check/",
-    })
-  }
-}
-
-export interface ChatRequest {
-  user_id: string
-  message: string
-}
-
-export interface ChatResponse {
-  reply: string
-  updated_summary: string
-}
-
-export interface ChatHistoryResponse {
-  messages: Array<{ role: string; content: string }>
-  has_more: boolean
-  total_count: number
-}
-
-export class ChatService {
-  /**
-   * Chat With Memory
-   * Chat with the LLM using hybrid memory (summary + recent messages).
-   * Updates the conversation memory and returns the assistant's reply with the updated summary.
-   * @param data The data for the request.
-   * @returns ChatResponse The response from the chat API
-   * @throws ApiError
-   */
-  public static chatWithMemory(
-    data: ChatRequest,
-  ): CancelablePromise<ChatResponse> {
-    return __request(OpenAPI, {
-      method: "POST",
-      url: "/api/v1/chat",
-      body: data,
-      mediaType: "application/json",
-    })
-  }
-
-  /**
-   * Get Chat History
-   * Retrieves paginated chat history for a user.
-   * @param userId User ID to get chat history for
-   * @param limit Maximum number of messages to retrieve (default: 10)
-   * @param offset Number of messages to skip for pagination (default: 0)
-   * @returns ChatHistoryResponse The paginated chat history
-   * @throws ApiError
-   */
-  public static getChatHistory(
-    userId: string,
-    limit: number = 10,
-    offset: number = 0,
-  ): CancelablePromise<ChatHistoryResponse> {
-    return __request(OpenAPI, {
-      method: "GET",
-      url: "/api/v1/chat/history",
-      query: {
-        user_id: userId,
-        limit: limit,
-        offset: offset,
-      },
     })
   }
 }

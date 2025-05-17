@@ -9,8 +9,26 @@ export type Body_login_login_access_token = {
   client_secret?: string | null
 }
 
+export type ChatHistoryResponse = {
+  messages: Array<{
+    [key: string]: string
+  }>
+  has_more: boolean
+  total_count: number
+}
+
+export type ChatRequest = {
+  user_id: string
+  message: string
+}
+
+export type ChatResponse = {
+  reply: string
+  updated_summary: string
+}
+
 export type HTTPValidationError = {
-  detail: Array<ValidationError>
+  detail?: Array<ValidationError>
 }
 
 export type Message = {
@@ -31,12 +49,7 @@ export type PrivateUserCreate = {
 
 export type Token = {
   access_token: string
-  token_type?: string
-}
-
-export type UpdatePassword = {
-  current_password: string
-  new_password: string
+  token_type: string
 }
 
 export type UserCreate = {
@@ -45,6 +58,31 @@ export type UserCreate = {
   is_superuser?: boolean
   full_name?: string | null
   password: string
+}
+
+export type UserLLMProfileRead = {
+  profile_data?: {
+    [key: string]: unknown
+  }
+  updated_at?: string
+  user_id: string
+}
+
+export type UserProfileResponse = {
+  status: string
+  profile: {
+    [key: string]: unknown
+  }
+}
+
+export type UserProfileText = {
+  text: string
+}
+
+export type UserProfileUpdate = {
+  data: {
+    [key: string]: unknown | null
+  }
 }
 
 export type UserPublic = {
@@ -85,6 +123,20 @@ export type ValidationError = {
   type: string
 }
 
+export type ChatGetChatHistoryData = {
+  limit?: number
+  offset?: number
+  userId: string
+}
+
+export type ChatGetChatHistoryResponse = ChatHistoryResponse
+
+export type ChatChatWithMemoryData = {
+  requestBody: ChatRequest
+}
+
+export type ChatChatWithMemoryResponse = ChatResponse
+
 export type LoginLoginAccessTokenData = {
   formData: Body_login_login_access_token
 }
@@ -111,11 +163,25 @@ export type LoginRecoverPasswordHtmlContentData = {
 
 export type LoginRecoverPasswordHtmlContentResponse = string
 
-export type PrivateCreateUserData = {
-  requestBody: PrivateUserCreate
+export type UserProfileSubmitProfileTextData = {
+  requestBody: UserProfileText
+  userId: string
 }
 
-export type PrivateCreateUserResponse = UserPublic
+export type UserProfileSubmitProfileTextResponse = UserProfileResponse
+
+export type UserProfileUpdateUserProfileData = {
+  requestBody: UserProfileUpdate
+  userId: string
+}
+
+export type UserProfileUpdateUserProfileResponse = UserProfileResponse
+
+export type UserProfileGetUserProfileData = {
+  userId: string
+}
+
+export type UserProfileGetUserProfileResponse = UserLLMProfileRead
 
 export type UsersReadUsersData = {
   limit?: number
@@ -139,12 +205,6 @@ export type UsersUpdateUserMeData = {
 }
 
 export type UsersUpdateUserMeResponse = UserPublic
-
-export type UsersUpdatePasswordMeData = {
-  requestBody: UpdatePassword
-}
-
-export type UsersUpdatePasswordMeResponse = Message
 
 export type UsersRegisterUserData = {
   requestBody: UserRegister
@@ -171,10 +231,10 @@ export type UsersDeleteUserData = {
 
 export type UsersDeleteUserResponse = Message
 
-export type UtilsTestEmailData = {
-  emailTo: string
+export type UsersCreatePrivateUserData = {
+  requestBody: PrivateUserCreate
 }
 
-export type UtilsTestEmailResponse = Message
+export type UsersCreatePrivateUserResponse = UserPublic
 
 export type UtilsHealthCheckResponse = boolean

@@ -6,6 +6,7 @@ import {
   FiHome,
   FiMessageCircle,
   FiSettings,
+  FiUser,
   FiUsers,
 } from "react-icons/fi"
 import type { IconType } from "react-icons/lib"
@@ -15,6 +16,7 @@ import type { UserPublic } from "@/client"
 const items = [
   { icon: FiHome, title: "Dashboard", path: "/" },
   { icon: FiMessageCircle, title: "Yenta", path: "/yenta" },
+  { icon: FiUser, title: "My Profile", path: "/profile" },
   { icon: FiSettings, title: "User Settings", path: "/settings" },
 ]
 

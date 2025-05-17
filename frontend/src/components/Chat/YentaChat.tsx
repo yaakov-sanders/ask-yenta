@@ -1,9 +1,21 @@
-import { Flex, Text, Textarea, VStack, HStack, Spinner, Box } from "@chakra-ui/react"
+import {
+  Box,
+  Flex,
+  HStack,
+  Spinner,
+  Text,
+  Textarea,
+  VStack,
+} from "@chakra-ui/react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import type React from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
-import { type ChatResponse, ChatService, type ChatHistoryResponse } from "@/client"
+import {
+  type ChatHistoryResponse,
+  type ChatResponse,
+  ChatService,
+} from "@/client"
 import type { ApiError } from "@/client/core/ApiError"
 import { UsersService } from "@/client/sdk.gen"
 import { Button } from "@/components/ui/button"
@@ -12,9 +24,9 @@ import { handleError } from "@/utils"
 const TextBubble = ({ role, content }: { role: string; content: string }) => {
   // Colors optimized for dark mode
   const isUser = role === "user"
-  
+
   return (
-    <Box 
+    <Box
       bg={isUser ? "rgba(59, 130, 246, 0.3)" : "rgba(16, 185, 129, 0.3)"}
       p={3}
       borderRadius="lg"
@@ -49,27 +61,37 @@ export const YentaChat = () => {
     queryFn: UsersService.readUserMe,
   })
 
-  const userId = useMemo(() => 
-    userQuery.data?.id ? String(userQuery.data.id) : "", 
-    [userQuery.data]
+  const userId = useMemo(
+    () => (userQuery.data?.id ? String(userQuery.data.id) : ""),
+    [userQuery.data],
   )
 
   // Fetch chat history when userId is available
   const chatHistoryQuery = useQuery<ChatHistoryResponse>({
     queryKey: ["chatHistory", userId, page, limit],
-    queryFn: () => ChatService.getChatHistory(userId, limit, page * limit),
+    queryFn: () => ChatService.getChatHistory({
+      userId: userId,
+      limit: limit,
+      offset: page * limit
+    }),
     enabled: !!userId,
   })
 
   // Update messages when chat history changes
   useEffect(() => {
     if (chatHistoryQuery.data) {
+      // Transform messages from API format to our Message interface format
+      const transformedMessages = chatHistoryQuery.data.messages.map((msg) => ({
+        role: msg.role || "assistant", // Default to assistant if role is missing
+        content: msg.content || "",    // Default to empty string if content is missing
+      }));
+      
       // Clear messages if this is the first page (page 0)
       if (page === 0) {
-        setMessages(chatHistoryQuery.data.messages)
+        setMessages(transformedMessages);
       } else {
         // Append older messages
-        setMessages((prev) => [...chatHistoryQuery.data.messages, ...prev])
+        setMessages((prev) => [...transformedMessages, ...prev]);
       }
     }
   }, [chatHistoryQuery.data, page])
@@ -83,7 +105,12 @@ export const YentaChat = () => {
 
   const chatMutation = useMutation<ChatResponse, ApiError, string>({
     mutationFn: (message: string) =>
-      ChatService.chatWithMemory({ user_id: userId, message }),
+      ChatService.chatWithMemory({
+        requestBody: {
+          user_id: userId,
+          message: message
+        }
+      }),
     onSuccess: (data) => {
       appendMessage({ role: "assistant", content: data.reply })
     },
@@ -134,9 +161,9 @@ export const YentaChat = () => {
   return (
     <Flex gap={4} direction="column" h="100%">
       {hasMore && (
-        <Button 
-          onClick={loadMoreMessages} 
-          loading={chatHistoryQuery.isLoading} 
+        <Button
+          onClick={loadMoreMessages}
+          loading={chatHistoryQuery.isLoading}
           size="sm"
           colorScheme="blue"
           variant="outline"
@@ -144,7 +171,7 @@ export const YentaChat = () => {
           Load More
         </Button>
       )}
-      
+
       {chatHistoryQuery.isLoading && page === 0 ? (
         <Flex justify="center" my={4}>
           <Spinner />
@@ -156,13 +183,15 @@ export const YentaChat = () => {
           ))}
         </VStack>
       )}
-      
+
       <HStack mt="auto">
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={userQuery.isLoading ? "Loading..." : "Type your message to Yenta..."}
+          placeholder={
+            userQuery.isLoading ? "Loading..." : "Type your message to Yenta..."
+          }
           borderColor="gray.600"
           _hover={{ borderColor: "gray.500" }}
           _focus={{ borderColor: "blue.400" }}

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from pydantic import BaseModel
 from sqlalchemy import JSON, Column
@@ -31,6 +31,10 @@ class UserProfileText(BaseModel):
 class UserProfileResponse(BaseModel):
     status: str
     profile: dict[str, Any]
+
+
+class UserProfileUpdate(BaseModel):
+    data: Dict[str, Optional[Any]]
 
 
 class DirectLLMPrompt(BaseModel):
