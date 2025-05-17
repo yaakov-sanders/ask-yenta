@@ -1,8 +1,8 @@
-from typing import Any
 import asyncio
 import logging
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 
 from app.features.conversation_memory.crud import (
     get_conversation_history,
@@ -15,10 +15,12 @@ from app.features.conversation_memory.models import (
     ChatResponse,
 )
 from app.features.core.api_deps import CurrentUser, SessionDep
-from app.features.user_profile.llm import chat_with_memory as llm_chat_with_memory
-from app.features.user_profile.llm import analyze_message_for_profile_updates
-from app.features.user_profile.llm import analyze_message_for_initial_profile
 from app.features.user_profile.crud import get_llm_profile, upsert_llm_profile
+from app.features.user_profile.llm import (
+    analyze_message_for_initial_profile,
+    analyze_message_for_profile_updates,
+)
+from app.features.user_profile.llm import chat_with_memory as llm_chat_with_memory
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -94,15 +96,15 @@ async def chat_with_memory(
         conversation_history=messages,
         user_profile=profile_data
     )
-    
+
     if user_profile:
         # If profile exists, check for updates
         profile_task = analyze_message_for_profile_updates(profile_data, user_message)
         reply_results, profile_results = await asyncio.gather(chat_task, profile_task)
-        
+
         reply, updated_summary = reply_results
         updated_profile_data, was_profile_updated = profile_results
-        
+
         # Update profile if changes were detected
         if was_profile_updated:
             profile, status = await upsert_llm_profile(session, user_id, updated_profile_data)
@@ -111,10 +113,10 @@ async def chat_with_memory(
         # If no profile exists, check if we should create one
         profile_task = analyze_message_for_initial_profile(user_message)
         reply_results, profile_results = await asyncio.gather(chat_task, profile_task)
-        
+
         reply, updated_summary = reply_results
         initial_profile_data, should_create_profile = profile_results
-        
+
         # Create a new profile if the message contains relevant information
         if should_create_profile and initial_profile_data:
             profile, status = await upsert_llm_profile(session, user_id, initial_profile_data)

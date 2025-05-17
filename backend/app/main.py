@@ -1,13 +1,11 @@
 import logging
 import traceback
-from typing import Callable
+from collections.abc import Callable
 
 import sentry_sdk
 from fastapi import FastAPI, Request, Response
-from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
-from starlette.exceptions import HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
@@ -31,21 +29,21 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         except Exception as e:
             # Log the exception with traceback
-            error_details = {
+            {
                 "path": request.url.path,
                 "method": request.method,
                 "client_host": request.client.host if request.client else None,
                 "exception": str(e),
                 "traceback": traceback.format_exc()
             }
-            
+
             logger.error(
                 f"Unhandled exception: {type(e).__name__}: {str(e)}\n"
                 f"Path: {request.url.path}\n"
                 f"Method: {request.method}\n"
                 f"Traceback: {traceback.format_exc()}"
             )
-            
+
             # Return a 500 response
             return JSONResponse(
                 status_code=HTTP_500_INTERNAL_SERVER_ERROR,

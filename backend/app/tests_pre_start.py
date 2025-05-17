@@ -2,7 +2,6 @@ import asyncio
 import logging
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncConnection
 from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixed
 
 from app.core.db import engine

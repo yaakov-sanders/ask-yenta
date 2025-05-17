@@ -1,6 +1,6 @@
-from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select
 from sqlalchemy.ext.asyncio import create_async_engine
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 import app.features.users.crud
 from app.core.config import settings
@@ -31,7 +31,7 @@ async def init_db(session: AsyncSession) -> None:
     statement = select(User).where(User.email == settings.FIRST_SUPERUSER)
     result = await session.exec(statement)
     user = result.first()
-    
+
     if not user:
         user_in = UserCreate(
             email=settings.FIRST_SUPERUSER,

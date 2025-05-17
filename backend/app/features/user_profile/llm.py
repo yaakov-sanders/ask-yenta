@@ -51,7 +51,7 @@ async def parse_profile_from_text(text: str) -> dict[str, Any]:
 
                 # Log the raw response for debugging
                 logger.info(f"API response status: {response.status}")
-                
+
                 # Parse the response
                 try:
                     result = await response.json()
@@ -402,14 +402,14 @@ async def update_profile_from_text(existing_profile: dict[str, Any], text: str) 
 async def analyze_message_for_profile_updates(existing_profile: dict[str, Any], user_message: str) -> tuple[dict[str, Any], bool]:
     """
     Analyzes a user message to determine if the user profile should be updated.
-    
+
     Args:
         existing_profile: The existing profile data
         user_message: The user's message to analyze
-        
+
     Returns:
         A tuple containing (updated_profile_data, was_profile_updated)
-        
+
     Raises:
         Exception: If the API call fails or the response cannot be parsed as JSON
     """
@@ -435,7 +435,7 @@ async def analyze_message_for_profile_updates(existing_profile: dict[str, Any], 
        - "profile_data": The unchanged existing profile
        - "was_updated": false
     5. Return ONLY the JSON object, with no additional text or explanation.
-    
+
     IMPORTANT: Only update the profile if the user explicitly shares information they want remembered, or asks to modify their profile.
     """
 
@@ -487,15 +487,15 @@ async def analyze_message_for_profile_updates(existing_profile: dict[str, Any], 
 
 async def analyze_message_for_initial_profile(user_message: str) -> tuple[dict[str, Any], bool]:
     """
-    Analyzes a user message to determine if it contains information that warrants creating 
+    Analyzes a user message to determine if it contains information that warrants creating
     an initial user profile when none exists.
-    
+
     Args:
         user_message: The user's message to analyze
-        
+
     Returns:
         A tuple containing (profile_data, should_create_profile)
-        
+
     Raises:
         Exception: If the API call fails or the response cannot be parsed as JSON
     """
@@ -517,7 +517,7 @@ async def analyze_message_for_initial_profile(user_message: str) -> tuple[dict[s
        - "profile_data": empty object {{}}
        - "should_create_profile": false
     5. Return ONLY the JSON object, with no additional text or explanation.
-    
+
     IMPORTANT: Only suggest creating a profile if the user explicitly shares significant personal information.
     Be conservative - only create profiles for substantial information sharing.
     """
