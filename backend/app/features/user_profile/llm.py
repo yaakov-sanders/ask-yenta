@@ -398,3 +398,171 @@ async def update_profile_from_text(existing_profile: dict[str, Any], text: str) 
         logger.error(f"Error processing LLM response: {str(e)}", exc_info=True)
         raise Exception(f"Error processing LLM response: {str(e)}")
 
+
+async def analyze_message_for_profile_updates(existing_profile: dict[str, Any], user_message: str) -> tuple[dict[str, Any], bool]:
+    """
+    Analyzes a user message to determine if the user profile should be updated.
+    
+    Args:
+        existing_profile: The existing profile data
+        user_message: The user's message to analyze
+        
+    Returns:
+        A tuple containing (updated_profile_data, was_profile_updated)
+        
+    Raises:
+        Exception: If the API call fails or the response cannot be parsed as JSON
+    """
+    # Convert existing profile to a formatted string
+    profile_str = json.dumps(existing_profile, indent=2)
+
+    prompt = f"""
+    You are AskYenta, an assistant that analyzes user messages to determine if profile data should be updated.
+
+    EXISTING PROFILE:
+    {profile_str}
+
+    USER MESSAGE:
+    {user_message}
+
+    INSTRUCTIONS:
+    1. Analyze the user message to determine if it contains any information that should be added to or updated in the user profile.
+    2. Look for personal preferences, biographical info, requests to remember something, or requests to forget/remove something.
+    3. If updates are needed, return a JSON object with two fields:
+       - "profile_data": The full updated profile JSON with changes applied
+       - "was_updated": true
+    4. If no updates are needed, return a JSON object with:
+       - "profile_data": The unchanged existing profile
+       - "was_updated": false
+    5. Return ONLY the JSON object, with no additional text or explanation.
+    
+    IMPORTANT: Only update the profile if the user explicitly shares information they want remembered, or asks to modify their profile.
+    """
+
+    payload = {
+        "model": DEFAULT_MODEL,
+        "prompt": prompt,
+        "stream": False
+    }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(OLLAMA_API_URL_GENERATE, json=payload) as response:
+                response.raise_for_status()
+
+                # Parse the response
+                result = await response.json()
+                response_text = result.get("response", "{}")
+
+                # Extract JSON from response
+                try:
+                    # Try to parse directly first
+                    parsed_json = json.loads(response_text)
+                    return parsed_json.get("profile_data", existing_profile), parsed_json.get("was_updated", False)
+                except json.JSONDecodeError:
+                    # If direct parsing fails, try to extract JSON from the string
+                    start_idx = response_text.find('{')
+                    end_idx = response_text.rfind('}')
+
+                    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                        json_str = response_text[start_idx:end_idx+1]
+                        try:
+                            parsed_json = json.loads(json_str)
+                            return parsed_json.get("profile_data", existing_profile), parsed_json.get("was_updated", False)
+                        except json.JSONDecodeError:
+                            # If still can't parse, return the existing profile to avoid data loss
+                            logger.error("Failed to parse LLM response as JSON, returning original profile")
+                            return existing_profile, False
+                    logger.error("Failed to extract JSON from LLM response, returning original profile")
+                    return existing_profile, False
+    except aiohttp.ClientError as e:
+        # Handle API request errors
+        logger.error(f"API request error: {str(e)}", exc_info=True)
+        return existing_profile, False
+    except Exception as e:
+        # Handle general errors
+        logger.error(f"Error processing LLM response: {str(e)}", exc_info=True)
+        return existing_profile, False
+
+
+async def analyze_message_for_initial_profile(user_message: str) -> tuple[dict[str, Any], bool]:
+    """
+    Analyzes a user message to determine if it contains information that warrants creating 
+    an initial user profile when none exists.
+    
+    Args:
+        user_message: The user's message to analyze
+        
+    Returns:
+        A tuple containing (profile_data, should_create_profile)
+        
+    Raises:
+        Exception: If the API call fails or the response cannot be parsed as JSON
+    """
+    prompt = f"""
+    You are AskYenta, an assistant that analyzes user messages to determine if a profile should be created.
+
+    USER MESSAGE:
+    {user_message}
+
+    INSTRUCTIONS:
+    1. Analyze the user message to determine if it contains personal information worth saving in a profile.
+    2. Look for personal preferences, biographical info, interests, goals, etc.
+    3. If the message contains enough information to create a useful profile:
+       - Return a JSON object with two fields:
+       - "profile_data": JSON object with extracted profile information
+       - "should_create_profile": true
+    4. If the message doesn't contain profile-worthy information:
+       - Return a JSON object with:
+       - "profile_data": empty object {{}}
+       - "should_create_profile": false
+    5. Return ONLY the JSON object, with no additional text or explanation.
+    
+    IMPORTANT: Only suggest creating a profile if the user explicitly shares significant personal information.
+    Be conservative - only create profiles for substantial information sharing.
+    """
+
+    payload = {
+        "model": DEFAULT_MODEL,
+        "prompt": prompt,
+        "stream": False
+    }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(OLLAMA_API_URL_GENERATE, json=payload) as response:
+                response.raise_for_status()
+
+                # Parse the response
+                result = await response.json()
+                response_text = result.get("response", "{}")
+
+                # Extract JSON from response
+                try:
+                    # Try to parse directly first
+                    parsed_json = json.loads(response_text)
+                    return parsed_json.get("profile_data", {}), parsed_json.get("should_create_profile", False)
+                except json.JSONDecodeError:
+                    # If direct parsing fails, try to extract JSON from the string
+                    start_idx = response_text.find('{')
+                    end_idx = response_text.rfind('}')
+
+                    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                        json_str = response_text[start_idx:end_idx+1]
+                        try:
+                            parsed_json = json.loads(json_str)
+                            return parsed_json.get("profile_data", {}), parsed_json.get("should_create_profile", False)
+                        except json.JSONDecodeError:
+                            logger.error("Failed to parse LLM response as JSON")
+                            return {}, False
+                    logger.error("Failed to extract JSON from LLM response")
+                    return {}, False
+    except aiohttp.ClientError as e:
+        # Handle API request errors
+        logger.error(f"API request error: {str(e)}", exc_info=True)
+        return {}, False
+    except Exception as e:
+        # Handle general errors
+        logger.error(f"Error processing LLM response: {str(e)}", exc_info=True)
+        return {}, False
+
