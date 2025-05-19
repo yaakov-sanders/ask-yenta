@@ -54,6 +54,16 @@ services:
       - "11434:11434"
     entrypoint: [ "/usr/local/bin/ollama-entrypoint.sh" ]
 
+  letta-db:
+    image: postgres:16
+    restart: always
+    environment:
+      - POSTGRES_DB=letta
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - letta_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
 
   letta:
     image: letta/letta:latest
@@ -64,8 +74,10 @@ services:
       - "8283:8283"
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
+      - LETTA_PG_URI=postgresql://postgres:${POSTGRES_PASSWORD}@letta-db:5432/letta
     depends_on:
       - ollama
+      - letta-db
 
   prestart:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
@@ -201,6 +213,7 @@ services:
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect
 volumes:
   app-db-data:
+  letta_pgdata:
 
 networks:
   traefik-public:
