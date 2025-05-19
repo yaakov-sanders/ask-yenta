@@ -44,6 +44,7 @@ class UserUpdateMe(SQLModel):
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str = Field(max_length=255)
+    profile_block_id: str | None = Field(None, max_length=255)
 
 
 # Properties to return via API, id is always required

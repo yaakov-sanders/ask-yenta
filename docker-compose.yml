@@ -42,6 +42,31 @@ services:
       - traefik.http.routers.${STACK_NAME?Variable not set}-adminer-https.tls.certresolver=le
       - traefik.http.services.${STACK_NAME?Variable not set}-adminer.loadbalancer.server.port=8080
 
+  ollama:
+    image: ollama/ollama:latest
+    restart: always
+    networks:
+      - default
+    volumes:
+      - ./ollama:/root/.ollama
+      - ./scripts/ollama-entrypoint.sh:/usr/local/bin/ollama-entrypoint.sh
+    ports:
+      - "11434:11434"
+    entrypoint: [ "/usr/local/bin/ollama-entrypoint.sh" ]
+
+
+  letta:
+    image: letta/letta:latest
+    restart: always
+    networks:
+      - default
+    ports:
+      - "8283:8283"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      - ollama
+
   prestart:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     build:
@@ -87,6 +112,10 @@ services:
         restart: true
       prestart:
         condition: service_completed_successfully
+      letta:
+        condition: service_started
+      ollama:
+        condition: service_started
     env_file:
       - .env
     environment:
@@ -107,6 +136,8 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
+      - LETTA_URL=http://letta:8283
+      - OLLAMA_MODEL=llama3.2:latest
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]

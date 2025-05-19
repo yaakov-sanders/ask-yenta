@@ -11,49 +11,61 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import type React from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
-import {
-  type ChatHistoryResponse,
-  type ChatResponse,
-  ChatService,
-} from "@/client"
 import type { ApiError } from "@/client/core/ApiError"
-import { UsersService } from "@/client/sdk.gen"
+import {
+  type ChatConversationInfo,
+  type ChatGetChatHistoryResponse,
+  type ChatMessageResponse,
+  type ChatMessage
+} from "@/client/types.gen"
+import { ChatService, UsersService } from "@/client/sdk.gen"
 import { Button } from "@/components/ui/button"
+import { useColorModeValue } from "@/components/ui/color-mode"
 import { handleError } from "@/utils"
 
-const TextBubble = ({ role, content }: { role: string; content: string }) => {
-  // Colors optimized for dark mode
-  const isUser = role === "user"
+const TextBubble = ({ messageType, content }: { messageType: string; content: string }) => {
+  // Colors optimized for dark mode and light mode
+  const isUser = messageType === "human"
+  
+  const userBubbleBg = useColorModeValue("blue.50", "rgba(59, 130, 246, 0.3)")
+  const assistantBubbleBg = useColorModeValue("green.50", "rgba(16, 185, 129, 0.3)")
+  const userBubbleBorder = useColorModeValue("blue.200", "blue.500")
+  const assistantBubbleBorder = useColorModeValue("green.200", "green.500")
+  const textColor = useColorModeValue("gray.800", "white")
 
   return (
     <Box
-      bg={isUser ? "rgba(59, 130, 246, 0.3)" : "rgba(16, 185, 129, 0.3)"}
+      bg={isUser ? userBubbleBg : assistantBubbleBg}
       p={3}
       borderRadius="lg"
       boxShadow="sm"
       alignSelf={isUser ? "flex-end" : "flex-start"}
       maxW="80%"
       borderWidth="1px"
-      borderColor={isUser ? "blue.500" : "green.500"}
+      borderColor={isUser ? userBubbleBorder : assistantBubbleBorder}
       mb={2}
     >
-      <Text color="#FFFFFF" fontWeight="medium">
+      <Text color={textColor} fontWeight="medium">
         {content}
       </Text>
     </Box>
   )
 }
 
-interface Message {
-  role: string
-  content: string
-}
-
 export const YentaChat = () => {
   const [text, setText] = useState("")
-  const [messages, setMessages] = useState<Message[]>([])
-  const [page, setPage] = useState(0)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [selectedChatId, setSelectedChatId] = useState<string>("")
+  const [lastMessageId, setLastMessageId] = useState<string | null>(null)
   const limit = 10
+  
+  // Define colors based on color mode
+  const inputBg = useColorModeValue("white", "gray.800")
+  const inputBorder = useColorModeValue("gray.200", "gray.600")
+  const inputHoverBorder = useColorModeValue("gray.300", "gray.500")
+  const inputFocusBorder = useColorModeValue("blue.300", "blue.400")
+  const textColor = useColorModeValue("gray.800", "white")
+  const selectBg = useColorModeValue("white", "#1A202C") // gray.800
 
   // Fetch the current user with React Query
   const userQuery = useQuery({
@@ -66,75 +78,98 @@ export const YentaChat = () => {
     [userQuery.data],
   )
 
-  // Fetch chat history when userId is available
-  const chatHistoryQuery = useQuery<ChatHistoryResponse>({
-    queryKey: ["chatHistory", userId, page, limit],
-    queryFn: () =>
-      ChatService.getChatHistory({
-        userId: userId,
-        limit: limit,
-        offset: page * limit,
-      }),
+  // Fetch available chats when userId is available
+  const chatsQuery = useQuery({
+    queryKey: ["chats", userId],
+    queryFn: ChatService.getChats,
     enabled: !!userId,
   })
+
+  // Create a new chat
+  const createChatMutation = useMutation({
+    mutationFn: ChatService.createChat,
+    onSuccess: (data) => {
+      setSelectedChatId(data.conversation_id)
+    },
+    onError: (err: Error) => {
+      handleError(err as ApiError)
+    },
+  })
+
+  // Fetch chat history when a chat is selected
+  const chatHistoryQuery = useQuery<ChatGetChatHistoryResponse>({
+    queryKey: ["chatHistory", selectedChatId, lastMessageId, limit],
+    queryFn: () =>
+      ChatService.getChatHistory({
+        chatConversationId: selectedChatId,
+        limit: limit,
+        lastMessageId: lastMessageId,
+      }),
+    enabled: !!selectedChatId,
+  })
+
+  // Set the first chat as selected when chats are loaded and no chat is selected
+  useEffect(() => {
+    if (
+      chatsQuery.data?.conversations_info.length &&
+      !selectedChatId &&
+      !createChatMutation.isPending
+    ) {
+      setSelectedChatId(chatsQuery.data.conversations_info[0].conversation_id)
+    }
+  }, [chatsQuery.data, selectedChatId, createChatMutation.isPending])
 
   // Update messages when chat history changes
   useEffect(() => {
     if (chatHistoryQuery.data) {
-      // Transform messages from API format to our Message interface format
-      const transformedMessages = chatHistoryQuery.data.messages.map((msg) => ({
-        role: msg.role || "assistant", // Default to assistant if role is missing
-        content: msg.content || "", // Default to empty string if content is missing
-      }))
-
-      // Clear messages if this is the first page (page 0)
-      if (page === 0) {
-        setMessages(transformedMessages)
-      } else {
-        // Append older messages
-        setMessages((prev) => [...transformedMessages, ...prev])
-      }
+      setMessages(chatHistoryQuery.data.messages)
     }
-  }, [chatHistoryQuery.data, page])
+  }, [chatHistoryQuery.data])
 
   const appendMessage = useCallback(
-    (newMessage: Message) => {
+    (newMessage: ChatMessage) => {
       setMessages((prevState) => [...prevState, newMessage])
     },
     [setMessages],
   )
 
-  const chatMutation = useMutation<ChatResponse, ApiError, string>({
+  const chatMutation = useMutation<ChatMessageResponse, ApiError, string>({
     mutationFn: (message: string) =>
       ChatService.chatWithMemory({
+        chatConversationId: selectedChatId,
         requestBody: {
-          user_id: userId,
           message: message,
         },
       }),
     onSuccess: (data) => {
-      appendMessage({ role: "assistant", content: data.reply })
+      // The latest message is the response
+      if (data.messages.length > 0) {
+        appendMessage(data.messages[data.messages.length - 1])
+      }
     },
     onError: (err) => {
       appendMessage({
-        role: "assistant",
         content: "Sorry, I'm having trouble connecting to my brain right now.",
+        message_type: "assistant",
       })
       handleError(err)
     },
   })
 
   const isDisabled = useMemo(
-    () => !text || chatMutation.isPending || !userId || userQuery.isLoading,
-    [text, chatMutation.isPending, userId, userQuery.isLoading],
+    () => !text || chatMutation.isPending || !selectedChatId || userQuery.isLoading,
+    [text, chatMutation.isPending, selectedChatId, userQuery.isLoading],
   )
 
   const sendText = useCallback(() => {
-    // Return early if no text, already loading, or no user ID
+    // Return early if no text, already loading, or no chat selected
     if (isDisabled) return
 
-    // Add user message
-    appendMessage({ role: "user", content: text })
+    // Add user message to the UI immediately
+    appendMessage({
+      content: text,
+      message_type: "human",
+    })
 
     // Send the message to the chat API
     chatMutation.mutate(text)
@@ -153,18 +188,65 @@ export const YentaChat = () => {
     [sendText],
   )
 
-  const loadMoreMessages = useCallback(() => {
-    setPage((prevPage) => prevPage + 1)
-  }, [])
+  const createNewChat = useCallback(() => {
+    createChatMutation.mutate()
+  }, [createChatMutation])
 
-  const hasMore = chatHistoryQuery.data?.has_more || false
+  const loadMoreMessages = useCallback(() => {
+    if (messages.length > 0) {
+      // Get the oldest message to fetch history before it
+      // Using content as a simple way to identify the message since id isn't available
+      const oldestMessageContent = messages[0].content
+      setLastMessageId(oldestMessageContent)
+    }
+  }, [messages])
+
+  // Correct the has_more property check
+  const hasMoreMessages = useMemo(() => {
+    // This is a safe check since ChatHistoryResponse doesn't have has_more property
+    return messages.length >= limit; // Assume there might be more if we got a full page
+  }, [messages, limit]);
 
   return (
     <Flex gap={4} direction="column" h="100%">
-      {hasMore && (
+      <HStack>
+        <Box flex="1">
+          <select
+            value={selectedChatId}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedChatId(e.target.value)}
+            disabled={chatsQuery.isLoading}
+            style={{
+              backgroundColor: selectBg,
+              color: textColor,
+              borderColor: inputBorder,
+              borderWidth: "1px",
+              borderRadius: "0.375rem",
+              padding: "0.5rem",
+              width: "100%",
+            }}
+          >
+            <option value="" disabled>Select a chat</option>
+            {chatsQuery.data?.conversations_info.map((chat: ChatConversationInfo) => (
+              <option key={chat.conversation_id} value={chat.conversation_id}>
+                {chat.name || `Chat ${chat.conversation_id.slice(0, 8)}`}
+              </option>
+            ))}
+          </select>
+        </Box>
+        <Button
+          onClick={createNewChat}
+          loading={createChatMutation.isPending}
+          colorScheme="blue"
+          variant="outline"
+        >
+          New Chat
+        </Button>
+      </HStack>
+
+      {hasMoreMessages && (
         <Button
           onClick={loadMoreMessages}
-          loading={chatHistoryQuery.isLoading}
+          loading={chatHistoryQuery.isLoading && !!lastMessageId}
           size="sm"
           colorScheme="blue"
           variant="outline"
@@ -173,14 +255,14 @@ export const YentaChat = () => {
         </Button>
       )}
 
-      {chatHistoryQuery.isLoading && page === 0 ? (
+      {chatHistoryQuery.isLoading && !lastMessageId ? (
         <Flex justify="center" my={4}>
           <Spinner />
         </Flex>
       ) : (
         <VStack align="stretch" flex="1" overflowY="auto">
           {messages.map((msg, idx) => (
-            <TextBubble key={idx} role={msg.role} content={msg.content} />
+            <TextBubble key={idx} messageType={msg.message_type} content={msg.content} />
           ))}
         </VStack>
       )}
@@ -191,13 +273,17 @@ export const YentaChat = () => {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={
-            userQuery.isLoading ? "Loading..." : "Type your message to Yenta..."
+            userQuery.isLoading
+              ? "Loading..."
+              : !selectedChatId
+              ? "Select or create a chat..."
+              : "Type your message to Yenta..."
           }
-          borderColor="gray.600"
-          _hover={{ borderColor: "gray.500" }}
-          _focus={{ borderColor: "blue.400" }}
-          bg="gray.800"
-          color="white"
+          borderColor={inputBorder}
+          _hover={{ borderColor: inputHoverBorder }}
+          _focus={{ borderColor: inputFocusBorder }}
+          bg={inputBg}
+          color={textColor}
         />
         <Button
           onClick={sendText}
