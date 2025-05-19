@@ -13,6 +13,7 @@ from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 from app.core.config import settings
 from app.features.core.api_main import api_router
 from app.features.core.models import ErrorResponse
+import pydevd_pycharm
 
 # Configure logging
 logging.basicConfig(
@@ -28,14 +29,6 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
         try:
             return await call_next(request)
         except Exception as e:
-            # Log the exception with traceback
-            {
-                "path": request.url.path,
-                "method": request.method,
-                "client_host": request.client.host if request.client else None,
-                "exception": str(e),
-                "traceback": traceback.format_exc()
-            }
 
             logger.error(
                 f"Unhandled exception: {type(e).__name__}: {str(e)}\n"
@@ -81,3 +74,8 @@ if settings.all_cors_origins:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+
+@app.on_event("startup")
+def connect_debugger():
+    pydevd_pycharm.settrace('host.docker.internal', port=5678, stdoutToServer=True, stderrToServer=True)

@@ -39,13 +39,13 @@ async def create_agent(identity_ids: list[str], block_ids: list[str] | None = No
     kwargs = {}
     if block_ids:
         kwargs['block_ids'] = block_ids
-    agent = await client.agents.create(identity_ids=identity_ids, llm_config=ollama_config, model="ollama/llama3.2:latest",embedding="ollama/mxbai-embed-large:latest", **kwargs)
+    agent = await client.agents.create(tags=identity_ids, llm_config=ollama_config, model="ollama/llama3.2:latest",embedding="ollama/mxbai-embed-large:latest", **kwargs)
     return agent
 
 
 async def get_agents(identity_id: str) -> list[AgentState]:
     client = get_letta_client()
-    agents = await client.agents.list(identity_id=identity_id)
+    agents = await client.agents.list(tags=identity_id)
     return agents
 
 

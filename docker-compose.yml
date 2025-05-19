@@ -116,6 +116,8 @@ services:
         condition: service_started
       ollama:
         condition: service_started
+    ports:
+      - "8000:8000"  # API port
     env_file:
       - .env
     environment:
@@ -138,6 +140,10 @@ services:
       - SENTRY_DSN=${SENTRY_DSN}
       - LETTA_URL=http://letta:8283
       - OLLAMA_MODEL=llama3.2:latest
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - PYTHONBREAKPOINT=0
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
