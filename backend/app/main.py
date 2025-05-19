@@ -1,7 +1,7 @@
 import logging
 import traceback
 from collections.abc import Callable
-
+from http.client import HTTPException
 import sentry_sdk
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
@@ -28,6 +28,8 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         try:
             return await call_next(request)
+        except HTTPException:
+            raise
         except Exception as e:
 
             logger.error(

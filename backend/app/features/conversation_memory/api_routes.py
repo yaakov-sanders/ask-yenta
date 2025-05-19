@@ -24,6 +24,8 @@ from app.features.llm_logic.llm_logic import (
 from app.features.user_profile.crud import get_or_create_user_profile_block
 from app.features.users.models import User
 
+from app.features.conversation_memory.models import get_chat_messages
+
 # Set up logger
 logger = logging.getLogger(__name__)
 
@@ -32,7 +34,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 async def get_conversation_for_user(current_user: User, chat_conversation_id: str) -> AgentState:
     conversation_agent = await get_agent_by_id(chat_conversation_id)
-    if current_user.id not in conversation_agent.identity_ids:
+    if str(current_user.id) not in conversation_agent.tags:
         raise HTTPException(403, "User not part of this conversation")
     return conversation_agent
 
@@ -62,7 +64,7 @@ async def chat_with_memory(
         raise HTTPException(403, "User not part of this conversation")
     response = await send_message(chat_conversation_id, chat_request.message)
     return ChatMessageResponse(
-        messages=[ChatMessage.from_message_union(m) for m in response.messages])
+        messages=get_chat_messages(response.messages))
 
 
 @router.get("/{chat_conversation_id}", response_model=ChatHistoryResponse)
@@ -75,5 +77,5 @@ async def get_chat_history(
     conversation = await get_conversation_for_user(current_user, chat_conversation_id)
     messages = await get_messages(conversation.id, limit, last_message_id)
     return ChatHistoryResponse(
-        messages=[ChatMessage.from_message_union(m) for m in messages],
+        messages=get_chat_messages(messages),
     )

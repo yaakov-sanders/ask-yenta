@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing_extensions import Self
-
+from typing import List
 from letta_client.types.letta_message_union import LettaMessageUnion
 from pydantic import BaseModel
 from sqlalchemy import JSON, Column, Text
@@ -42,6 +42,10 @@ class ChatMessage(BaseModel):
     @classmethod
     def from_message_union(cls, message: LettaMessageUnion) -> Self:
         return cls(content=message.content, message_type=message.message_type)
+
+
+def get_chat_messages(messages: List[LettaMessageUnion]) -> List[ChatMessage]:
+    return [ChatMessage.from_message_union(m) for m in messages if hasattr(m, 'content')]
 
 
 class ChatMessageResponse(BaseModel):
