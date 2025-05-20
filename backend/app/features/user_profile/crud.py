@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Tuple
 
 from letta_client.types.block import Block
 from sqlmodel import select
@@ -57,11 +57,21 @@ async def get_llm_profile(db: AsyncSession, user_id: uuid.UUID) -> UserLLMProfil
     return result.first()
 
 
-async def get_or_create_user_profile_block(user: User) -> Block:
+async def get_or_create_user_block_ids(user: User) -> Tuple[str, str]:
     if user.profile_block_id:
-        block = await get_block_by_id(user.profile_block_id)
+        profile_block_id = user.profile_block_id
     else:
-        block = await create_block('profile', f"Profile: {user.full_name}")
-        user.profile_block_id = block.id
+        profile_block = await create_block('human', f"Profile: {user.full_name}")
+        profile_block_id = profile_block.id
+        user.profile_block_id = profile_block_id
+
         await save_to_db(user)
-    return block
+    if user.yenta_block_id:
+        yenta_block_id = user.yenta_block_id
+    else:
+        yenta_block = await create_block('persona', f"You are Yenta — a warm, witty, and perceptive AI who remembers everything about the user and helps them understand themselves and others better. You speak like a nosy best friend with good intentions and great instincts. Be smart, honest, and a little cheeky.")
+        yenta_block_id = yenta_block.id
+        user.yenta_block_id = yenta_block_id
+        await save_to_db(user)
+
+    return profile_block_id, yenta_block_id

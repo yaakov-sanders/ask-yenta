@@ -21,7 +21,8 @@ from app.features.llm_logic.llm_logic import (
     get_messages,
     send_message,
 )
-from app.features.user_profile.crud import get_or_create_user_profile_block
+from app.features.user_profile.crud import get_or_create_user_block_ids
+
 from app.features.users.models import User
 
 from app.features.conversation_memory.models import get_chat_messages
@@ -48,8 +49,8 @@ async def get_chats(current_user: CurrentUser) -> ChatConversationsResponse:
 
 @router.post("", response_model=ChatConversationCreationResponse)
 async def create_chat(current_user: CurrentUser) -> ChatConversationCreationResponse:
-    user_profile_block = await get_or_create_user_profile_block(current_user)
-    conversation_agent = await create_agent(identity_ids=[current_user.id], block_ids=[user_profile_block.id])
+    user_profile_block, yenta_block = await get_or_create_user_block_ids(current_user)
+    conversation_agent = await create_agent(identity_ids=[current_user.id], block_ids=[user_profile_block, yenta_block])
     return ChatConversationCreationResponse(conversation_id=conversation_agent.id)
 
 

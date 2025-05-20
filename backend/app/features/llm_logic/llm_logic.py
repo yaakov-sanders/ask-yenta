@@ -1,13 +1,12 @@
 import os
 from typing import Literal
 from letta_client import AsyncLetta
-from letta_client.types.llm_config import LlmConfig
 from letta_client.types.agent_state import AgentState
 from letta_client.types.block import Block
 from letta_client.types.letta_message_union import LettaMessageUnion
 from letta_client.types.letta_response import LettaResponse
 
-BLOCK_TYPES = Literal['profile']
+BLOCK_TYPES = Literal['human', 'persona']
 LETTA_URL = os.getenv("LETTA_URL", "http://localhost:8283")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -24,7 +23,7 @@ async def get_block_by_id(block_id: str) -> Block:
 
 async def create_block(label: BLOCK_TYPES, value: str) -> Block:
     client = get_letta_client()
-    block = await client.blocks.create(value=value, label=label)
+    block = await client.blocks.create(value=value, label=label, is_template=True)
     return block
 
 
