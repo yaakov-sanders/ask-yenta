@@ -23,9 +23,9 @@ import { Button } from "@/components/ui/button"
 import { useColorModeValue } from "@/components/ui/color-mode"
 import { handleError } from "@/utils"
 
-const TextBubble = ({ messageType, content }: { messageType: string; content: string }) => {
+const TextBubble = ({ messageType, content, role }: { messageType: string; content: string; role: string }) => {
   // Colors optimized for dark mode and light mode
-  const isUser = messageType === "human"
+  const isUser = role === "user"
   
   const userBubbleBg = useColorModeValue("blue.50", "rgba(59, 130, 246, 0.3)")
   const assistantBubbleBg = useColorModeValue("green.50", "rgba(16, 185, 129, 0.3)")
@@ -151,6 +151,7 @@ export const YentaChat = () => {
       appendMessage({
         content: "Sorry, I'm having trouble connecting to my brain right now.",
         message_type: "assistant",
+        role: "yenta"
       })
       handleError(err)
     },
@@ -169,6 +170,7 @@ export const YentaChat = () => {
     appendMessage({
       content: text,
       message_type: "human",
+      role: "user"
     })
 
     // Send the message to the chat API
@@ -262,7 +264,7 @@ export const YentaChat = () => {
       ) : (
         <VStack align="stretch" flex="1" overflowY="auto">
           {messages.map((msg, idx) => (
-            <TextBubble key={idx} messageType={msg.message_type} content={msg.content} />
+            <TextBubble key={idx} messageType={msg.message_type} content={msg.content} role={msg.role} />
           ))}
         </VStack>
       )}

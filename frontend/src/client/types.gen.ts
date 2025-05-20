@@ -29,7 +29,10 @@ export type ChatHistoryResponse = {
 export type ChatMessage = {
     content: string;
     message_type: string;
+    role: 'user' | 'yenta';
 };
+
+export type role = 'user' | 'yenta';
 
 export type ChatMessageRequest = {
     message: string;
