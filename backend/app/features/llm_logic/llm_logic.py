@@ -9,13 +9,7 @@ from letta_client.types.letta_response import LettaResponse
 
 BLOCK_TYPES = Literal['profile']
 LETTA_URL = os.getenv("LETTA_URL", "http://localhost:8283")
-OLLAMA_MODEL = "llama3.2:latest"
-OLLAMA_EMBEDDING = "ollama/mxbai-embed-large:latest"
-ollama_config = LlmConfig(
-    model=OLLAMA_MODEL,
-    model_endpoint_type='ollama',
-    context_window=10000
-)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 def get_letta_client():
@@ -39,7 +33,12 @@ async def create_agent(identity_ids: list[str], block_ids: list[str] | None = No
     kwargs = {}
     if block_ids:
         kwargs['block_ids'] = block_ids
-    agent = await client.agents.create(tags=identity_ids, llm_config=ollama_config, model="ollama/llama3.2:latest",embedding="ollama/mxbai-embed-large:latest", **kwargs)
+    agent = await client.agents.create(
+        tags=identity_ids, 
+        model="openai/gpt-4o-mini",
+        embedding="openai/text-embedding-3-small",
+        **kwargs
+    )
     return agent
 
 

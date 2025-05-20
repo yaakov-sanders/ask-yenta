@@ -42,18 +42,6 @@ services:
       - traefik.http.routers.${STACK_NAME?Variable not set}-adminer-https.tls.certresolver=le
       - traefik.http.services.${STACK_NAME?Variable not set}-adminer.loadbalancer.server.port=8080
 
-  ollama:
-    image: ollama/ollama:latest
-    restart: always
-    networks:
-      - default
-    volumes:
-      - ./ollama:/root/.ollama
-      - ./scripts/ollama-entrypoint.sh:/usr/local/bin/ollama-entrypoint.sh
-    ports:
-      - "11434:11434"
-    entrypoint: [ "/usr/local/bin/ollama-entrypoint.sh" ]
-
   letta-db:
     image: pgvector/pgvector:pg16
     restart: always
@@ -76,10 +64,9 @@ services:
     ports:
       - "8283:8283"
     environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - LETTA_PG_URI=postgresql://postgres:${POSTGRES_PASSWORD}@letta-db:5432/letta
     depends_on:
-      - ollama
       - letta-db
 
   prestart:
@@ -129,8 +116,6 @@ services:
         condition: service_completed_successfully
       letta:
         condition: service_started
-      ollama:
-        condition: service_started
     ports:
       - "8000:8000"  # API port
     env_file:
@@ -154,8 +139,6 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
       - LETTA_URL=http://letta:8283
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - OLLAMA_MODEL=llama3.2:latest
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1

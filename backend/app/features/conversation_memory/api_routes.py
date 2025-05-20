@@ -59,9 +59,7 @@ async def chat_with_memory(
         current_user: CurrentUser,
         chat_conversation_id: str = Path(),
 ) -> ChatMessageResponse:
-    conversation_agent = await get_agent_by_id(chat_conversation_id)
-    if current_user.id not in conversation_agent.identity_ids:
-        raise HTTPException(403, "User not part of this conversation")
+    await get_conversation_for_user(current_user, chat_conversation_id)
     response = await send_message(chat_conversation_id, chat_request.message)
     return ChatMessageResponse(
         messages=get_chat_messages(response.messages))
