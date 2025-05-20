@@ -9,9 +9,9 @@ from app.features.conversation_memory.models import (
     ChatConversationInfo,
     ChatConversationsResponse,
     ChatHistoryResponse,
-    ChatMessage,
     ChatMessageRequest,
     ChatMessageResponse,
+    get_chat_messages,
 )
 from app.features.core.api_deps import CurrentUser
 from app.features.llm_logic.llm_logic import (
@@ -22,10 +22,7 @@ from app.features.llm_logic.llm_logic import (
     send_message,
 )
 from app.features.user_profile.crud import get_or_create_user_block_ids
-
 from app.features.users.models import User
-
-from app.features.conversation_memory.models import get_chat_messages
 
 # Set up logger
 logger = logging.getLogger(__name__)

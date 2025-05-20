@@ -1,5 +1,6 @@
 import os
 from typing import Literal
+
 from letta_client import AsyncLetta
 from letta_client.types.agent_state import AgentState
 from letta_client.types.block import Block
@@ -33,7 +34,7 @@ async def create_agent(identity_ids: list[str], block_ids: list[str] | None = No
     if block_ids:
         kwargs['block_ids'] = block_ids
     agent = await client.agents.create(
-        tags=identity_ids, 
+        tags=identity_ids,
         model="openai/gpt-4o-mini",
         embedding="openai/text-embedding-3-small",
         **kwargs

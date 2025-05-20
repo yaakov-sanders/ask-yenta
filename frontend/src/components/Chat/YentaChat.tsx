@@ -12,23 +12,30 @@ import type React from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import type { ApiError } from "@/client/core/ApiError"
-import {
-  type ChatConversationInfo,
-  type ChatGetChatHistoryResponse,
-  type ChatMessageResponse,
-  type ChatMessage
-} from "@/client/types.gen"
 import { ChatService, UsersService } from "@/client/sdk.gen"
+import type {
+  ChatConversationInfo,
+  ChatGetChatHistoryResponse,
+  ChatMessage,
+  ChatMessageResponse,
+} from "@/client/types.gen"
 import { Button } from "@/components/ui/button"
 import { useColorModeValue } from "@/components/ui/color-mode"
 import { handleError } from "@/utils"
 
-const TextBubble = ({ messageType, content, role }: { messageType: string; content: string; role: string }) => {
+const TextBubble = ({
+  messageType,
+  content,
+  role,
+}: { messageType: string; content: string; role: string }) => {
   // Colors optimized for dark mode and light mode
   const isUser = role === "user"
-  
+
   const userBubbleBg = useColorModeValue("blue.50", "rgba(59, 130, 246, 0.3)")
-  const assistantBubbleBg = useColorModeValue("green.50", "rgba(16, 185, 129, 0.3)")
+  const assistantBubbleBg = useColorModeValue(
+    "green.50",
+    "rgba(16, 185, 129, 0.3)",
+  )
   const userBubbleBorder = useColorModeValue("blue.200", "blue.500")
   const assistantBubbleBorder = useColorModeValue("green.200", "green.500")
   const textColor = useColorModeValue("gray.800", "white")
@@ -58,7 +65,7 @@ export const YentaChat = () => {
   const [selectedChatId, setSelectedChatId] = useState<string>("")
   const [lastMessageId, setLastMessageId] = useState<string | null>(null)
   const limit = 10
-  
+
   // Define colors based on color mode
   const inputBg = useColorModeValue("white", "gray.800")
   const inputBorder = useColorModeValue("gray.200", "gray.600")
@@ -151,14 +158,15 @@ export const YentaChat = () => {
       appendMessage({
         content: "Sorry, I'm having trouble connecting to my brain right now.",
         message_type: "assistant",
-        role: "yenta"
+        role: "yenta",
       })
       handleError(err)
     },
   })
 
   const isDisabled = useMemo(
-    () => !text || chatMutation.isPending || !selectedChatId || userQuery.isLoading,
+    () =>
+      !text || chatMutation.isPending || !selectedChatId || userQuery.isLoading,
     [text, chatMutation.isPending, selectedChatId, userQuery.isLoading],
   )
 
@@ -170,7 +178,7 @@ export const YentaChat = () => {
     appendMessage({
       content: text,
       message_type: "human",
-      role: "user"
+      role: "user",
     })
 
     // Send the message to the chat API
@@ -206,8 +214,8 @@ export const YentaChat = () => {
   // Correct the has_more property check
   const hasMoreMessages = useMemo(() => {
     // This is a safe check since ChatHistoryResponse doesn't have has_more property
-    return messages.length >= limit; // Assume there might be more if we got a full page
-  }, [messages, limit]);
+    return messages.length >= limit // Assume there might be more if we got a full page
+  }, [messages, limit])
 
   return (
     <Flex gap={4} direction="column" h="100%">
@@ -215,7 +223,9 @@ export const YentaChat = () => {
         <Box flex="1">
           <select
             value={selectedChatId}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedChatId(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              setSelectedChatId(e.target.value)
+            }
             disabled={chatsQuery.isLoading}
             style={{
               backgroundColor: selectBg,
@@ -227,12 +237,16 @@ export const YentaChat = () => {
               width: "100%",
             }}
           >
-            <option value="" disabled>Select a chat</option>
-            {chatsQuery.data?.conversations_info.map((chat: ChatConversationInfo) => (
-              <option key={chat.conversation_id} value={chat.conversation_id}>
-                {chat.name || `Chat ${chat.conversation_id.slice(0, 8)}`}
-              </option>
-            ))}
+            <option value="" disabled>
+              Select a chat
+            </option>
+            {chatsQuery.data?.conversations_info.map(
+              (chat: ChatConversationInfo) => (
+                <option key={chat.conversation_id} value={chat.conversation_id}>
+                  {chat.name || `Chat ${chat.conversation_id.slice(0, 8)}`}
+                </option>
+              ),
+            )}
           </select>
         </Box>
         <Button
@@ -264,7 +278,12 @@ export const YentaChat = () => {
       ) : (
         <VStack align="stretch" flex="1" overflowY="auto">
           {messages.map((msg, idx) => (
-            <TextBubble key={idx} messageType={msg.message_type} content={msg.content} role={msg.role} />
+            <TextBubble
+              key={idx}
+              messageType={msg.message_type}
+              content={msg.content}
+              role={msg.role}
+            />
           ))}
         </VStack>
       )}
@@ -278,8 +297,8 @@ export const YentaChat = () => {
             userQuery.isLoading
               ? "Loading..."
               : !selectedChatId
-              ? "Select or create a chat..."
-              : "Type your message to Yenta..."
+                ? "Select or create a chat..."
+                : "Type your message to Yenta..."
           }
           borderColor={inputBorder}
           _hover={{ borderColor: inputHoverBorder }}

@@ -1,13 +1,14 @@
 import uuid
 from datetime import datetime
-from typing_extensions import Self
-from typing import List, Literal
+from typing import Literal
+
+from letta_client.types.assistant_message import AssistantMessage
 from letta_client.types.letta_message_union import LettaMessageUnion
 from letta_client.types.user_message import UserMessage
-from letta_client.types.assistant_message import AssistantMessage
 from pydantic import BaseModel
 from sqlalchemy import JSON, Column, Text
 from sqlmodel import Field, SQLModel
+from typing_extensions import Self
 
 ROLE = Literal["user", "yenta"]
 
@@ -49,7 +50,7 @@ class ChatMessage(BaseModel):
         return cls(content=message.content, message_type=message.message_type, role='yenta')
 
 
-def get_chat_messages(messages: List[LettaMessageUnion]) -> List[ChatMessage]:
+def get_chat_messages(messages: list[LettaMessageUnion]) -> list[ChatMessage]:
     res = []
     for message in messages:
         if isinstance(message, UserMessage):

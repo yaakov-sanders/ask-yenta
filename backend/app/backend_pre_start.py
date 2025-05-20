@@ -1,12 +1,11 @@
 import asyncio
 import logging
 
-from letta_client import MessageCreate, TextContent
-
 from sqlalchemy import text
 from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixed
 
 from app.core.db import engine
+
 # from app.features.llm_logic.llm_logic import get_letta_client
 
 logging.basicConfig(level=logging.INFO)

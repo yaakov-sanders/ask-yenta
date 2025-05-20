@@ -3,6 +3,8 @@ import traceback
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from http.client import HTTPException
+
+import pydevd_pycharm
 import sentry_sdk
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
@@ -14,7 +16,6 @@ from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 from app.core.config import settings
 from app.features.core.api_main import api_router
 from app.features.core.models import ErrorResponse
-import pydevd_pycharm
 
 # Configure logging
 logging.basicConfig(

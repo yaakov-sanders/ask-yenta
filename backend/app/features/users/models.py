@@ -3,7 +3,7 @@ import uuid
 # Forward references for type hints
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlmodel import Field, SQLModel
 
 if TYPE_CHECKING:
