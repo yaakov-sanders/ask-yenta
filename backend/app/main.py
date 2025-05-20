@@ -1,6 +1,7 @@
 import logging
 import traceback
 from collections.abc import Callable
+from contextlib import asynccontextmanager
 from http.client import HTTPException
 import sentry_sdk
 from fastapi import FastAPI, Request, Response
@@ -56,10 +57,21 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
     sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load the ML model
+    try:
+        pydevd_pycharm.settrace('host.docker.internal', port=5678, stdoutToServer=True, stderrToServer=True, suspend=False)
+    except Exception:
+        pass
+    yield
+
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     generate_unique_id_function=custom_generate_unique_id,
+    lifespan=lifespan
 )
 
 # Add exception handling middleware
@@ -75,12 +87,5 @@ if settings.all_cors_origins:
         allow_headers=["*"],
     )
 
+
 app.include_router(api_router, prefix=settings.API_V1_STR)
-
-
-@app.on_event("startup")
-def connect_debugger():
-    try:
-        pydevd_pycharm.settrace('host.docker.internal', port=5678, stdoutToServer=True, stderrToServer=True, suspend=False)
-    except Exception:
-        pass
