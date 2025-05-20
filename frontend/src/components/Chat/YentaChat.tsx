@@ -59,10 +59,9 @@ const TextBubble = ({
   )
 }
 
-export const YentaChat = () => {
+export const YentaChat = ({ selectedChatId, onSelectChat }: { selectedChatId: string, onSelectChat: (id: string) => void }) => {
   const [text, setText] = useState("")
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [selectedChatId, setSelectedChatId] = useState<string>("")
   const [lastMessageId, setLastMessageId] = useState<string | null>(null)
   const limit = 10
 
@@ -96,7 +95,7 @@ export const YentaChat = () => {
   const createChatMutation = useMutation({
     mutationFn: ChatService.createChat,
     onSuccess: (data) => {
-      setSelectedChatId(data.conversation_id)
+      onSelectChat(data.conversation_id)
     },
     onError: (err: Error) => {
       handleError(err as ApiError)
@@ -114,17 +113,6 @@ export const YentaChat = () => {
       }),
     enabled: !!selectedChatId,
   })
-
-  // Set the first chat as selected when chats are loaded and no chat is selected
-  useEffect(() => {
-    if (
-      chatsQuery.data?.conversations_info.length &&
-      !selectedChatId &&
-      !createChatMutation.isPending
-    ) {
-      setSelectedChatId(chatsQuery.data.conversations_info[0].conversation_id)
-    }
-  }, [chatsQuery.data, selectedChatId, createChatMutation.isPending])
 
   // Update messages when chat history changes
   useEffect(() => {
@@ -198,10 +186,6 @@ export const YentaChat = () => {
     [sendText],
   )
 
-  const createNewChat = useCallback(() => {
-    createChatMutation.mutate()
-  }, [createChatMutation])
-
   const loadMoreMessages = useCallback(() => {
     if (messages.length > 0) {
       // Get the oldest message to fetch history before it
@@ -219,46 +203,6 @@ export const YentaChat = () => {
 
   return (
     <Flex gap={4} direction="column" h="100%">
-      <HStack>
-        <Box flex="1">
-          <select
-            value={selectedChatId}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              setSelectedChatId(e.target.value)
-            }
-            disabled={chatsQuery.isLoading}
-            style={{
-              backgroundColor: selectBg,
-              color: textColor,
-              borderColor: inputBorder,
-              borderWidth: "1px",
-              borderRadius: "0.375rem",
-              padding: "0.5rem",
-              width: "100%",
-            }}
-          >
-            <option value="" disabled>
-              Select a chat
-            </option>
-            {chatsQuery.data?.conversations_info.map(
-              (chat: ChatConversationInfo) => (
-                <option key={chat.conversation_id} value={chat.conversation_id}>
-                  {chat.name || `Chat ${chat.conversation_id.slice(0, 8)}`}
-                </option>
-              ),
-            )}
-          </select>
-        </Box>
-        <Button
-          onClick={createNewChat}
-          loading={createChatMutation.isPending}
-          colorScheme="blue"
-          variant="outline"
-        >
-          New Chat
-        </Button>
-      </HStack>
-
       {hasMoreMessages && (
         <Button
           onClick={loadMoreMessages}
@@ -270,7 +214,6 @@ export const YentaChat = () => {
           Load More
         </Button>
       )}
-
       {chatHistoryQuery.isLoading && !lastMessageId ? (
         <Flex justify="center" my={4}>
           <Spinner />
@@ -287,7 +230,6 @@ export const YentaChat = () => {
           ))}
         </VStack>
       )}
-
       <HStack mt="auto">
         <Textarea
           value={text}
