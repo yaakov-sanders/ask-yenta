@@ -9,22 +9,37 @@ export type Body_login_login_access_token = {
   client_secret?: string | null
 }
 
-export type ChatHistoryResponse = {
-  messages: Array<{
-    [key: string]: string
-  }>
-  has_more: boolean
-  total_count: number
+export type ChatConversationCreationResponse = {
+  conversation_id: string
 }
 
-export type ChatRequest = {
-  user_id: string
+export type ChatConversationInfo = {
+  conversation_id: string
+  name: string
+}
+
+export type ChatConversationsResponse = {
+  conversations_info: Array<ChatConversationInfo>
+}
+
+export type ChatHistoryResponse = {
+  messages: Array<ChatMessage>
+}
+
+export type ChatMessage = {
+  content: string
+  message_type: string
+  role: "user" | "yenta"
+}
+
+export type role = "user" | "yenta"
+
+export type ChatMessageRequest = {
   message: string
 }
 
-export type ChatResponse = {
-  reply: string
-  updated_summary: string
+export type ChatMessageResponse = {
+  messages: Array<ChatMessage>
 }
 
 export type HTTPValidationError = {
@@ -58,15 +73,6 @@ export type UserCreate = {
   is_superuser?: boolean
   full_name?: string | null
   password: string
-}
-
-export type UserLLMProfileRead = {
-  profile_data?: {
-    [key: string]: unknown
-  }
-  updated_at?: string
-  user_id: string
-  profile_summary?: string | null
 }
 
 export type UserLLMProfileSummary = {
@@ -130,19 +136,24 @@ export type ValidationError = {
   type: string
 }
 
+export type ChatGetChatsResponse = ChatConversationsResponse
+
+export type ChatCreateChatResponse = ChatConversationCreationResponse
+
+export type ChatChatWithMemoryData = {
+  chatConversationId: string
+  requestBody: ChatMessageRequest
+}
+
+export type ChatChatWithMemoryResponse = ChatMessageResponse
+
 export type ChatGetChatHistoryData = {
+  chatConversationId: string
+  lastMessageId?: string | null
   limit?: number
-  offset?: number
-  userId: string
 }
 
 export type ChatGetChatHistoryResponse = ChatHistoryResponse
-
-export type ChatChatWithMemoryData = {
-  requestBody: ChatRequest
-}
-
-export type ChatChatWithMemoryResponse = ChatResponse
 
 export type LoginLoginAccessTokenData = {
   formData: Body_login_login_access_token

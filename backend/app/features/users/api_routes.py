@@ -7,6 +7,7 @@ from sqlmodel import func, select
 
 import app.features.users.crud
 from app.core.config import settings
+from app.core.db import save_to_db
 from app.core.security import get_password_hash
 from app.features.core.api_deps import (
     CurrentUser,
@@ -90,9 +91,7 @@ async def update_user_me(
             )
     user_data = user_in.model_dump(exclude_unset=True)
     current_user.sqlmodel_update(user_data)
-    session.add(current_user)
-    await session.commit()
-    await session.refresh(current_user)
+    await save_to_db(current_user)
     return current_user
 
 

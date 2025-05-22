@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlmodel import select
+from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 import app.features.users.crud
@@ -39,3 +39,10 @@ async def init_db(session: AsyncSession) -> None:
             is_superuser=True,
         )
         user = await app.features.users.crud.create_user(session=session, user_create=user_in)
+
+
+async def save_to_db(model: SQLModel):
+    async with AsyncSession(engine) as session:
+        session.add(model)
+        await session.commit()
+        await session.refresh(model)

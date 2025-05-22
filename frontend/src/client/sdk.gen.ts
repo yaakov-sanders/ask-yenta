@@ -6,8 +6,10 @@ import { request as __request } from "./core/request"
 import type {
   ChatChatWithMemoryData,
   ChatChatWithMemoryResponse,
+  ChatCreateChatResponse,
   ChatGetChatHistoryData,
   ChatGetChatHistoryResponse,
+  ChatGetChatsResponse,
   LoginLoginAccessTokenData,
   LoginLoginAccessTokenResponse,
   LoginRecoverPasswordData,
@@ -48,17 +50,60 @@ import type {
 
 export class ChatService {
   /**
-   * Get Chat History
-   * Get chat history for a user with pagination.
-   * Returns the most recent messages first.
-   *
-   * - **user_id**: ID of the user to get chat history for
-   * - **limit**: Maximum number of messages to retrieve (default: 10, max: 50)
-   * - **offset**: Number of messages to skip for pagination (default: 0)
+   * Get Chats
+   * @returns ChatConversationsResponse Successful Response
+   * @throws ApiError
+   */
+  public static getChats(): CancelablePromise<ChatGetChatsResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/chat",
+    })
+  }
+
+  /**
+   * Create Chat
+   * @returns ChatConversationCreationResponse Successful Response
+   * @throws ApiError
+   */
+  public static createChat(): CancelablePromise<ChatCreateChatResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/chat",
+    })
+  }
+
+  /**
+   * Chat With Memory
    * @param data The data for the request.
-   * @param data.userId
+   * @param data.chatConversationId
+   * @param data.requestBody
+   * @returns ChatMessageResponse Successful Response
+   * @throws ApiError
+   */
+  public static chatWithMemory(
+    data: ChatChatWithMemoryData,
+  ): CancelablePromise<ChatChatWithMemoryResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/chat/{chat_conversation_id}",
+      path: {
+        chat_conversation_id: data.chatConversationId,
+      },
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Get Chat History
+   * @param data The data for the request.
+   * @param data.chatConversationId
    * @param data.limit
-   * @param data.offset
+   * @param data.lastMessageId
    * @returns ChatHistoryResponse Successful Response
    * @throws ApiError
    */
@@ -67,35 +112,14 @@ export class ChatService {
   ): CancelablePromise<ChatGetChatHistoryResponse> {
     return __request(OpenAPI, {
       method: "GET",
-      url: "/api/v1/chat/history",
+      url: "/api/v1/chat/{chat_conversation_id}",
+      path: {
+        chat_conversation_id: data.chatConversationId,
+      },
       query: {
-        user_id: data.userId,
         limit: data.limit,
-        offset: data.offset,
+        last_message_id: data.lastMessageId,
       },
-      errors: {
-        422: "Validation Error",
-      },
-    })
-  }
-
-  /**
-   * Chat With Memory
-   * Chat with the LLM using hybrid memory (summary + recent messages).
-   * Updates the conversation memory and returns the assistant's reply with the updated summary.
-   * @param data The data for the request.
-   * @param data.requestBody
-   * @returns ChatResponse Successful Response
-   * @throws ApiError
-   */
-  public static chatWithMemory(
-    data: ChatChatWithMemoryData,
-  ): CancelablePromise<ChatChatWithMemoryResponse> {
-    return __request(OpenAPI, {
-      method: "POST",
-      url: "/api/v1/chat",
-      body: data.requestBody,
-      mediaType: "application/json",
       errors: {
         422: "Validation Error",
       },
@@ -511,7 +535,7 @@ export class UsersService {
 
   /**
    * Create Private User
-   * Create a new user through private endpoint.
+   * Create a user for private use.
    * @param data The data for the request.
    * @param data.requestBody
    * @returns UserPublic Successful Response
