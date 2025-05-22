@@ -12,7 +12,6 @@ from app.features.letta_logic.letta_logic import (
     get_messages,
     send_message,
 )
-from app.features.user_profile.crud import get_or_create_user_block_ids
 from app.features.users.models import User
 from app.features.yenta_chat.models import (
     YentaChatCreationResponse,
@@ -34,14 +33,14 @@ async def get_conversation_for_user(
     current_user: User, chat_conversation_id: str
 ) -> AgentState:
     conversation_agent = await get_agent_by_id(chat_conversation_id)
-    if str(current_user.id) not in conversation_agent.tags:
+    if current_user.identity_id not in conversation_agent.identity_ids:
         raise HTTPException(403, "User not part of this conversation")
     return conversation_agent
 
 
 @router.get("", response_model=YentaChatsResponse)
 async def get_chats(current_user: CurrentUser) -> YentaChatsResponse:
-    conversation_agents = await get_agents(identity_id=current_user.id)
+    conversation_agents = await get_agents(identity_id=current_user.identity_id)
     return YentaChatsResponse(
         chats_info=[
             YentaChatInfo(conversation_id=a.id, name=a.name)

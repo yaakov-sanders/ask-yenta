@@ -68,6 +68,12 @@ services:
       - LETTA_PG_URI=postgresql://postgres:${POSTGRES_PASSWORD}@letta-db:5432/letta
     depends_on:
       - letta-db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8283/v1/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   prestart:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
@@ -80,6 +86,8 @@ services:
       db:
         condition: service_healthy
         restart: true
+      letta:
+        condition: service_healthy
     command: bash scripts/prestart.sh
     env_file:
       - .env
@@ -101,6 +109,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
+      - LETTA_URL=http://letta:8283
 
   backend:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'

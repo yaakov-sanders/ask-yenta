@@ -13,9 +13,9 @@ if TYPE_CHECKING:
 # Shared properties
 class UserBase(SQLModel):
     email: str = Field(unique=True, index=True, max_length=255)
+    full_name: str = Field(max_length=255)
     is_active: bool = True
     is_superuser: bool = False
-    full_name: str | None = Field(default=None, max_length=255)
 
 
 # Properties to receive via API on creation

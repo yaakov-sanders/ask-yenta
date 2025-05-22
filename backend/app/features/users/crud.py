@@ -11,7 +11,7 @@ from app.features.users.models import User, UserCreate, UserUpdate
 
 async def create_letta_fields(user: User):
     user_identity, yenta_block, profile_block = await asyncio.gather(
-        create_identity(user.internal_id, user.name, "user"),
+        create_identity(str(user.id), user.full_name, "user"),
         create_block(
             "persona",
             "You are Yenta — a warm, witty, and perceptive AI who remembers everything about the user and helps them understand themselves and others better. You speak like a nosy best friend with good intentions and great instincts. Be smart, honest, and a little cheeky.",
