@@ -12,12 +12,11 @@ import type React from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import type { ApiError } from "@/client/core/ApiError"
-import { ChatService, UsersService } from "@/client/sdk.gen"
+import { YentaChatService, UsersService } from "@/client/sdk.gen"
 import type {
-  ChatConversationInfo,
-  ChatGetChatHistoryResponse,
-  ChatMessage,
-  ChatMessageResponse,
+  YentaChatGetChatHistoryResponse,
+  YentaMessage,
+  YentaMessageResponse,
 } from "@/client/types.gen"
 import { Button } from "@/components/ui/button"
 import { useColorModeValue } from "@/components/ui/color-mode"
@@ -59,9 +58,9 @@ const TextBubble = ({
   )
 }
 
-export const YentaChat = ({ selectedChatId, onSelectChat }: { selectedChatId: string, onSelectChat: (id: string) => void }) => {
+export const YentaChat = ({ selectedChatId }: { selectedChatId: string, onSelectChat: (id: string) => void }) => {
   const [text, setText] = useState("")
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<YentaMessage[]>([])
   const [lastMessageId, setLastMessageId] = useState<string | null>(null)
   const limit = 10
 
@@ -71,7 +70,7 @@ export const YentaChat = ({ selectedChatId, onSelectChat }: { selectedChatId: st
   const inputHoverBorder = useColorModeValue("gray.300", "gray.500")
   const inputFocusBorder = useColorModeValue("blue.300", "blue.400")
   const textColor = useColorModeValue("gray.800", "white")
-  const selectBg = useColorModeValue("white", "#1A202C") // gray.800
+
 
   // Fetch the current user with React Query
   const userQuery = useQuery({
@@ -79,34 +78,12 @@ export const YentaChat = ({ selectedChatId, onSelectChat }: { selectedChatId: st
     queryFn: UsersService.readUserMe,
   })
 
-  const userId = useMemo(
-    () => (userQuery.data?.id ? String(userQuery.data.id) : ""),
-    [userQuery.data],
-  )
-
-  // Fetch available chats when userId is available
-  const chatsQuery = useQuery({
-    queryKey: ["chats", userId],
-    queryFn: ChatService.getChats,
-    enabled: !!userId,
-  })
-
-  // Create a new chat
-  const createChatMutation = useMutation({
-    mutationFn: ChatService.createChat,
-    onSuccess: (data) => {
-      onSelectChat(data.conversation_id)
-    },
-    onError: (err: Error) => {
-      handleError(err as ApiError)
-    },
-  })
 
   // Fetch chat history when a chat is selected
-  const chatHistoryQuery = useQuery<ChatGetChatHistoryResponse>({
+  const chatHistoryQuery = useQuery<YentaChatGetChatHistoryResponse>({
     queryKey: ["chatHistory", selectedChatId, lastMessageId, limit],
     queryFn: () =>
-      ChatService.getChatHistory({
+      YentaChatService.getChatHistory({
         chatConversationId: selectedChatId,
         limit: limit,
         lastMessageId: lastMessageId,
@@ -122,15 +99,15 @@ export const YentaChat = ({ selectedChatId, onSelectChat }: { selectedChatId: st
   }, [chatHistoryQuery.data])
 
   const appendMessage = useCallback(
-    (newMessage: ChatMessage) => {
+    (newMessage: YentaMessage) => {
       setMessages((prevState) => [...prevState, newMessage])
     },
     [setMessages],
   )
 
-  const chatMutation = useMutation<ChatMessageResponse, ApiError, string>({
+  const chatMutation = useMutation<YentaMessageResponse, ApiError, string>({
     mutationFn: (message: string) =>
-      ChatService.chatWithMemory({
+      YentaChatService.chatWithMemory({
         chatConversationId: selectedChatId,
         requestBody: {
           message: message,

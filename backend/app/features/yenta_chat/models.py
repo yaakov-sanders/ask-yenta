@@ -14,7 +14,7 @@ ROLE = Literal["user", "yenta"]
 
 
 class ConversationMemory(SQLModel, table=True):
-    __tablename__ = "conversation_memory"
+    __tablename__ = "yenta_chat"
 
     user_id: uuid.UUID = Field(primary_key=True)
     summary: str = Field(default="", sa_column=Column(Text))
@@ -23,24 +23,24 @@ class ConversationMemory(SQLModel, table=True):
 
 
 # API schemas
-class ChatConversationInfo(BaseModel):
+class YentaChatInfo(BaseModel):
     conversation_id: str
     name: str
 
 
-class ChatConversationsResponse(BaseModel):
-    conversations_info: list[ChatConversationInfo]
+class YentaChatsResponse(BaseModel):
+    chats_info: list[YentaChatInfo]
 
 
-class ChatConversationCreationResponse(BaseModel):
+class YentaChatCreationResponse(BaseModel):
     conversation_id: str
 
 
-class ChatMessageRequest(BaseModel):
+class YentaMessageRequest(BaseModel):
     message: str
 
 
-class ChatMessage(BaseModel):
+class YentaMessage(BaseModel):
     content: str
     message_type: str
     role: ROLE
@@ -50,19 +50,19 @@ class ChatMessage(BaseModel):
         return cls(content=message.content, message_type=message.message_type, role='yenta')
 
 
-def get_chat_messages(messages: list[LettaMessageUnion]) -> list[ChatMessage]:
+def get_chat_messages(messages: list[LettaMessageUnion]) -> list[YentaMessage]:
     res = []
     for message in messages:
         if isinstance(message, UserMessage):
-            res.append(ChatMessage(content=message.content, message_type=message.message_type, role='user'))
+            res.append(YentaMessage(content=message.content, message_type=message.message_type, role='user'))
         elif isinstance(message, AssistantMessage):
-            res.append(ChatMessage(content=message.content, message_type=message.message_type, role='yenta'))
+            res.append(YentaMessage(content=message.content, message_type=message.message_type, role='yenta'))
     return res
 
 
-class ChatMessageResponse(BaseModel):
-    messages: list[ChatMessage]
+class YentaMessageResponse(BaseModel):
+    messages: list[YentaMessage]
 
 
-class ChatHistoryResponse(BaseModel):
-    messages: list[ChatMessage]
+class YentaChatHistoryResponse(BaseModel):
+    messages: list[YentaMessage]

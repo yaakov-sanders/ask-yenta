@@ -3,8 +3,8 @@ import { Box, Button, Flex, Text } from "@chakra-ui/react"
 import { useColorModeValue } from "../ui/color-mode"
 import type { ReactNode } from "react"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { ChatService } from "@/client/sdk.gen"
-import type { ChatConversationInfo } from "@/client/types.gen"
+import { YentaChatService } from "@/client/sdk.gen"
+import type { YentaChatInfo, YentaChatsResponse } from "@/client/types.gen"
 import { handleError } from "@/utils"
 
 interface ChatLayoutProps {
@@ -25,14 +25,14 @@ export const ChatLayout = ({ children }: ChatLayoutProps) => {
   const [selectedChatId, setSelectedChatId] = useState<string>("")
 
   // Fetch chat list with pagination
-  const chatsQuery = useQuery({
+  const chatsQuery = useQuery<YentaChatsResponse>({
     queryKey: ["chats", { page, limit: PAGE_SIZE }],
-    queryFn: ChatService.getChats,
+    queryFn: YentaChatService.getChats,
   })
 
   // Create new chat
   const createChatMutation = useMutation({
-    mutationFn: ChatService.createChat,
+    mutationFn: YentaChatService.createChat,
     onSuccess: (data) => {
       setSelectedChatId(data.conversation_id)
     },
@@ -42,18 +42,18 @@ export const ChatLayout = ({ children }: ChatLayoutProps) => {
   // Select first chat by default
   React.useEffect(() => {
     if (
-      chatsQuery.data?.conversations_info.length &&
+      chatsQuery.data?.chats_info?.length &&
       !selectedChatId &&
       !createChatMutation.isPending
     ) {
-      setSelectedChatId(chatsQuery.data.conversations_info[0].conversation_id)
+      setSelectedChatId(chatsQuery.data.chats_info[0].conversation_id)
     }
   }, [chatsQuery.data, selectedChatId, createChatMutation.isPending])
 
   // Pagination logic
   const hasPrev = page > 0
   const hasNext =
-    chatsQuery.data?.conversations_info.length === PAGE_SIZE // crude check
+    chatsQuery.data?.chats_info?.length === PAGE_SIZE // crude check
 
   // For chat highlight color
   const selectedBg = useColorModeValue("blue.100", "blue.700")
@@ -87,10 +87,10 @@ export const ChatLayout = ({ children }: ChatLayoutProps) => {
           {chatsQuery.isLoading ? (
             <Text>Loading...</Text>
           ) : (
-            chatsQuery.data?.conversations_info.map((chat: ChatConversationInfo, idx: number) => (
+            chatsQuery.data?.chats_info?.map((chat: YentaChatInfo, idx: number) => (
               <Box
                 key={chat.conversation_id}
-                mb={idx !== chatsQuery.data.conversations_info.length - 1 ? 2 : 0}
+                mb={idx !== (chatsQuery.data?.chats_info?.length ?? 0) - 1 ? 2 : 0}
                 p={2}
                 borderRadius="md"
                 bg={selectedChatId === chat.conversation_id ? selectedBg : "transparent"}
