@@ -13,15 +13,6 @@ from typing_extensions import Self
 ROLE = Literal["user", "yenta"]
 
 
-class ConversationMemory(SQLModel, table=True):
-    __tablename__ = "yenta_chat"
-
-    user_id: uuid.UUID = Field(primary_key=True)
-    summary: str = Field(default="", sa_column=Column(Text))
-    messages: list[dict[str, str]] = Field(default=[], sa_column=Column(JSON))
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-
 # API schemas
 class YentaChatInfo(BaseModel):
     conversation_id: str
@@ -47,16 +38,30 @@ class YentaMessage(BaseModel):
 
     @classmethod
     def from_message_union(cls, message: LettaMessageUnion) -> Self:
-        return cls(content=message.content, message_type=message.message_type, role='yenta')
+        return cls(
+            content=message.content, message_type=message.message_type, role="yenta"
+        )
 
 
 def get_chat_messages(messages: list[LettaMessageUnion]) -> list[YentaMessage]:
     res = []
     for message in messages:
         if isinstance(message, UserMessage):
-            res.append(YentaMessage(content=message.content, message_type=message.message_type, role='user'))
+            res.append(
+                YentaMessage(
+                    content=message.content,
+                    message_type=message.message_type,
+                    role="user",
+                )
+            )
         elif isinstance(message, AssistantMessage):
-            res.append(YentaMessage(content=message.content, message_type=message.message_type, role='yenta'))
+            res.append(
+                YentaMessage(
+                    content=message.content,
+                    message_type=message.message_type,
+                    role="yenta",
+                )
+            )
     return res
 
 

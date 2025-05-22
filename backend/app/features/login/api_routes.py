@@ -47,7 +47,7 @@ async def login_access_token(
         access_token=security.create_access_token(
             user.id, expires_delta=access_token_expires
         ),
-        token_type="bearer"
+        token_type="bearer",
     )
 
 

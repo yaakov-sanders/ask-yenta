@@ -70,7 +70,9 @@ def test_get_existing_user(
     )
     assert 200 <= r.status_code < 300
     api_user = r.json()
-    existing_user = app.features.users.crud.get_user_by_email(session=db, email=username)
+    existing_user = app.features.users.crud.get_user_by_email(
+        session=db, email=username
+    )
     assert existing_user
     assert existing_user.email == api_user["email"]
 
@@ -97,7 +99,9 @@ def test_get_existing_user_current_user(client: TestClient, db: Session) -> None
     )
     assert 200 <= r.status_code < 300
     api_user = r.json()
-    existing_user = app.features.users.crud.get_user_by_email(session=db, email=username)
+    existing_user = app.features.users.crud.get_user_by_email(
+        session=db, email=username
+    )
     assert existing_user
     assert existing_user.email == api_user["email"]
 
@@ -458,7 +462,9 @@ def test_delete_user_not_found(
 def test_delete_user_current_super_user_error(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    super_user = app.features.users.crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    super_user = app.features.users.crud.get_user_by_email(
+        session=db, email=settings.FIRST_SUPERUSER
+    )
     assert super_user
     user_id = super_user.id
 

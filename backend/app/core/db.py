@@ -38,7 +38,9 @@ async def init_db(session: AsyncSession) -> None:
             password=settings.FIRST_SUPERUSER_PASSWORD,
             is_superuser=True,
         )
-        user = await app.features.users.crud.create_user(session=session, user_create=user_in)
+        user = await app.features.users.crud.create_user(
+            session=session, user_create=user_in
+        )
 
 
 async def save_to_db(model: SQLModel):

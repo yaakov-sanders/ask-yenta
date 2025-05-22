@@ -1,23 +1,46 @@
+import asyncio
 from typing import Any
 
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.security import get_password_hash
+from app.features.letta_logic.letta_logic import create_block, create_identity
 from app.features.users.models import User, UserCreate, UserUpdate
 
 
+async def create_letta_fields(user: User):
+    user_identity, yenta_block, profile_block = await asyncio.gather(
+        create_identity(user.internal_id, user.name, "user"),
+        create_block(
+            "persona",
+            "You are Yenta — a warm, witty, and perceptive AI who remembers everything about the user and helps them understand themselves and others better. You speak like a nosy best friend with good intentions and great instincts. Be smart, honest, and a little cheeky.",
+        ),
+        create_block("human", f"Profile: {user.full_name}"),
+    )
+
+    user.profile_block_id, user.yenta_block_id, user.identity_id = (
+        profile_block.id,
+        yenta_block.id,
+        user_identity.id,
+    )
+
+
 async def create_user(*, session: AsyncSession, user_create: UserCreate) -> User:
-    db_obj = User.model_validate(
+    user = User.model_validate(
         user_create, update={"hashed_password": get_password_hash(user_create.password)}
     )
-    session.add(db_obj)
+    session.add(user)
+    await session.flush()
+    await session.refresh(user)
+    await create_letta_fields(user)
     await session.commit()
-    await session.refresh(db_obj)
-    return db_obj
+    return user
 
 
-async def update_user(*, session: AsyncSession, db_user: User, user_in: UserUpdate) -> Any:
+async def update_user(
+    *, session: AsyncSession, db_user: User, user_in: UserUpdate
+) -> Any:
     user_data = user_in.model_dump(exclude_unset=True)
     extra_data = {}
     if "password" in user_data:
