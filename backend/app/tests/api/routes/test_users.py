@@ -4,10 +4,10 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
-import app.features.users.crud
+import app.features.users.users_crud
 from app.core.config import settings
 from app.core.security import verify_password
-from app.features.users.models import User, UserCreate
+from app.features.users.users_models import User, UserCreate
 from app.tests.utils.utils import random_email, random_lower_string
 
 

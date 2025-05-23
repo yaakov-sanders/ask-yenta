@@ -1,10 +1,10 @@
 from fastapi.encoders import jsonable_encoder
 from sqlmodel import Session
 
-import app.features.login.crud
-import app.features.users.crud
+import app.features.login.login_crud
+import app.features.users.users_crud
 from app.core.security import verify_password
-from app.features.users.models import User, UserCreate, UserUpdate
+from app.features.users.users_models import User, UserCreate, UserUpdate
 from app.tests.utils.utils import random_email, random_lower_string
 
 

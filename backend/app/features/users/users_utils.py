@@ -2,7 +2,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.db import engine
-from app.features.users.models import User
+from app.features.users.users_models import User
 
 
 async def convert_identity_ids_to_user_ids(identity_ids: list[str]) -> dict[str, str]:

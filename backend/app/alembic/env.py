@@ -18,9 +18,10 @@ fileConfig(config.config_file_name)
 # target_metadata = None
 
 from app.core.config import settings  # noqa
+
 # Import the main app which will indirectly import all models through the routers
 import app.main  # noqa
-from app.features.login.models import SQLModel  # noqa
+from app.features.login.login_models import SQLModel  # noqa
 
 target_metadata = SQLModel.metadata
 

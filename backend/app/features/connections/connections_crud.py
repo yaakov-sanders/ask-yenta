@@ -4,13 +4,13 @@ from typing import Any, List
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.features.connections.models import (
+from app.features.connections.connections_models import (
     Connection,
     ConnectionCreate,
     ConnectionStatus,
     ConnectionUpdate,
 )
-from app.features.users.models import User
+from app.features.users.users_models import User
 
 
 async def create_connection(
@@ -37,7 +37,10 @@ async def create_connection(
 
 
 async def update_connection(
-    *, session: AsyncSession, connection: Connection, connection_update: ConnectionUpdate
+    *,
+    session: AsyncSession,
+    connection: Connection,
+    connection_update: ConnectionUpdate,
 ) -> Connection:
     connection_data = connection_update.model_dump(exclude_unset=True)
     connection_data["updated_at"] = datetime.utcnow()
@@ -81,4 +84,4 @@ async def get_user_connections(
 
 async def delete_connection(*, session: AsyncSession, connection: Connection) -> None:
     await session.delete(connection)
-    await session.commit() 
+    await session.commit()

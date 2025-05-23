@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, Path, Query
 
-from app.features.chat.utils import get_conversation_for_user
+from app.features.chat.chat_utils import get_conversation_for_user
 from app.features.core.api_deps import CurrentUser
 from app.features.letta_logic.letta_logic import (
     create_agent,
@@ -10,7 +10,7 @@ from app.features.letta_logic.letta_logic import (
     get_messages,
     send_message,
 )
-from app.features.users.utils import convert_identity_ids_to_user_ids
+from app.features.users.users_utils import convert_identity_ids_to_user_ids
 from app.features.users_chat.user_chat_models import (
     UsersChatCreationResponse,
     UsersChatHistoryResponse,

@@ -2,9 +2,9 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-import app.features.users.crud
+import app.features.users.users_crud
 from app.core.config import settings
-from app.features.users.models import User, UserCreate
+from app.features.users.users_models import User, UserCreate
 
 # Convert database URI to async format (replace postgresql:// with postgresql+asyncpg://)
 database_uri = str(settings.SQLALCHEMY_DATABASE_URI)

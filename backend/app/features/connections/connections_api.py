@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.features.core.api_deps import get_current_user, get_db
-from app.features.connections import crud, models
-from app.features.users.models import User
+from app.features.connections import connections_crud, connections_models
+from app.features.users.users_models import User
 
 router = APIRouter(prefix="/connections", tags=["connections"])
 

@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, Path, Query
 
-from app.features.chat.utils import get_conversation_for_user
+from app.features.chat.chat_utils import get_conversation_for_user
 from app.features.core.api_deps import CurrentUser
 from app.features.letta_logic.letta_logic import (
     create_agent,

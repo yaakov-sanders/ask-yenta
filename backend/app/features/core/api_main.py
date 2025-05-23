@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
-from app.features.connections.api_routes import router as connections_router
-from app.features.login.api_routes import router as login_router
-from app.features.users.api_routes import router as users_router
+from app.features.connections.connections_api import router as connections_router
+from app.features.login.login_api import router as login_router
+from app.features.users.users_api import router as users_router
 from app.features.utils.api_routes import router as utils_router
 from app.features.yenta_chat.yenta_chat_api import router as yenta_chat_router
 

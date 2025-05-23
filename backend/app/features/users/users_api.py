@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import func, select
 
-import app.features.users.crud
+import app.features.users.users_crud
 from app.core.config import settings
 from app.core.db import save_to_db
 from app.core.security import get_password_hash
@@ -15,7 +15,7 @@ from app.features.core.api_deps import (
     get_current_active_superuser,
 )
 from app.features.core.models import Message
-from app.features.users.models import (
+from app.features.users.users_models import (
     User,
     UserCreate,
     UserPublic,

@@ -1,8 +1,8 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.security import verify_password
-from app.features.users.crud import get_user_by_email
-from app.features.users.models import User
+from app.features.users.users_crud import get_user_by_email
+from app.features.users.users_models import User
 
 
 async def authenticate(

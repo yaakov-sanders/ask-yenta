@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from letta_client import AgentState
 
 from app.features.letta_logic.letta_logic import get_agent_by_id
-from app.features.users.models import User
+from app.features.users.users_models import User
 
 
 async def get_conversation_for_user(

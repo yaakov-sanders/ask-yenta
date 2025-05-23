@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.security import get_password_hash
 from app.features.letta_logic.letta_logic import create_block, create_identity
-from app.features.users.models import User, UserCreate, UserUpdate
+from app.features.users.users_models import User, UserCreate, UserUpdate
 
 
 async def create_letta_fields(user: User):
