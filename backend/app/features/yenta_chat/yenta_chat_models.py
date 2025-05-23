@@ -1,14 +1,9 @@
-import uuid
-from datetime import datetime
 from typing import Literal
 
 from letta_client.types.assistant_message import AssistantMessage
 from letta_client.types.letta_message_union import LettaMessageUnion
 from letta_client.types.user_message import UserMessage
 from pydantic import BaseModel
-from sqlalchemy import JSON, Column, Text
-from sqlmodel import Field, SQLModel
-from typing_extensions import Self
 
 ROLE = Literal["user", "yenta"]
 
@@ -31,24 +26,20 @@ class YentaMessageRequest(BaseModel):
     message: str
 
 
-class YentaMessage(BaseModel):
+class YentaChatMessage(BaseModel):
     content: str
     message_type: str
     role: ROLE
 
-    @classmethod
-    def from_message_union(cls, message: LettaMessageUnion) -> Self:
-        return cls(
-            content=message.content, message_type=message.message_type, role="yenta"
-        )
 
-
-def get_chat_messages(messages: list[LettaMessageUnion]) -> list[YentaMessage]:
+def get_yenta_chat_messages(
+    messages: list[LettaMessageUnion],
+) -> list[YentaChatMessage]:
     res = []
     for message in messages:
         if isinstance(message, UserMessage):
             res.append(
-                YentaMessage(
+                YentaChatMessage(
                     content=message.content,
                     message_type=message.message_type,
                     role="user",
@@ -56,7 +47,7 @@ def get_chat_messages(messages: list[LettaMessageUnion]) -> list[YentaMessage]:
             )
         elif isinstance(message, AssistantMessage):
             res.append(
-                YentaMessage(
+                YentaChatMessage(
                     content=message.content,
                     message_type=message.message_type,
                     role="yenta",
@@ -66,8 +57,8 @@ def get_chat_messages(messages: list[LettaMessageUnion]) -> list[YentaMessage]:
 
 
 class YentaMessageResponse(BaseModel):
-    messages: list[YentaMessage]
+    messages: list[YentaChatMessage]
 
 
 class YentaChatHistoryResponse(BaseModel):
-    messages: list[YentaMessage]
+    messages: list[YentaChatMessage]

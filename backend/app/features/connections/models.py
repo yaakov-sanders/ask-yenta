@@ -1,13 +1,7 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING
-
-from pydantic import BaseModel
 from sqlmodel import Field, SQLModel
-
-if TYPE_CHECKING:
-    pass
 
 
 class ConnectionStatus(str, Enum):
@@ -34,6 +28,7 @@ class ConnectionUpdate(ConnectionBase):
 # Database model
 class Connection(ConnectionBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    status: str = Field(default=ConnectionStatus.PENDING)
     source_user_id: uuid.UUID = Field(foreign_key="user.id")
     target_user_id: uuid.UUID = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -51,4 +46,4 @@ class ConnectionPublic(ConnectionBase):
 
 class ConnectionsPublic(SQLModel):
     data: list[ConnectionPublic]
-    count: int 
+    count: int

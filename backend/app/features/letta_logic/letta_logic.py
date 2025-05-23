@@ -12,6 +12,7 @@ from letta_client.types import (
 )
 
 BLOCK_TYPES = Literal["human", "persona"]
+CHAT_TYPES = Literal["yenta-chat", "users-chat"]
 LETTA_URL = os.getenv("LETTA_URL", "http://localhost:8283")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -33,13 +34,14 @@ async def create_block(label: BLOCK_TYPES, value: str) -> Block:
 
 
 async def create_agent(
-    identity_ids: list[str], block_ids: list[str] | None = None
+    identity_ids: list[str], chat_type: CHAT_TYPES, block_ids: list[str] | None = None
 ) -> AgentState:
     client = get_letta_client()
     kwargs = {}
     if block_ids:
         kwargs["block_ids"] = block_ids
     agent = await client.agents.create(
+        tags=[chat_type],
         identity_ids=identity_ids,
         model="openai/gpt-4o-mini",
         embedding="openai/text-embedding-3-small",
@@ -48,9 +50,9 @@ async def create_agent(
     return agent
 
 
-async def get_agents(identity_id: str) -> list[AgentState]:
+async def get_agents(identity_id: str, chat_type: CHAT_TYPES) -> list[AgentState]:
     client = get_letta_client()
-    agents = await client.agents.list(identity_id=identity_id)
+    agents = await client.agents.list(identity_id=identity_id, tags=[chat_type])
     return agents
 
 
@@ -60,10 +62,11 @@ async def get_agent_by_id(agent_id: str) -> AgentState:
     return agent
 
 
-async def send_message(agent_id: str, message: str) -> LettaResponse:
+async def send_message(agent_id: str, sender_id: str, message: str) -> LettaResponse:
     client = get_letta_client()
     response = await client.agents.messages.create(
-        agent_id=agent_id, messages=[{"role": "user", "content": message}]
+        agent_id=agent_id,
+        messages=[{"role": "user", "content": message, "sender_id": sender_id}],
     )
     return response
 

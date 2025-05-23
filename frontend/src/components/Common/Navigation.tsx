@@ -1,4 +1,4 @@
-import { Box, HStack, Button, Text, IconButton, VStack } from "@chakra-ui/react"
+import { Box, HStack, Button, IconButton, VStack } from "@chakra-ui/react"
 import { Link } from "@tanstack/react-router"
 import { useColorModeValue, useColorMode } from "../ui/color-mode"
 import * as React from "react"
