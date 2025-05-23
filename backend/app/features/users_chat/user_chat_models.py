@@ -18,6 +18,10 @@ class UsersChatsResponse(BaseModel):
     chats_info: list[UsersChatInfo]
 
 
+class UsersChatCreationRequest(BaseModel):
+    participant_ids: list[str]
+
+
 class UsersChatCreationResponse(BaseModel):
     conversation_id: str
 

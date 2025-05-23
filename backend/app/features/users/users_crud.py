@@ -4,6 +4,7 @@ from typing import Any
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.core.db import with_async_session
 from app.core.security import get_password_hash
 from app.features.letta_logic.letta_logic import create_block, create_identity
 from app.features.users.users_models import User, UserCreate, UserUpdate
@@ -59,3 +60,10 @@ async def get_user_by_email(*, session: AsyncSession, email: str) -> User | None
     statement = select(User).where(User.email == email)
     result = await session.exec(statement)
     return result.first()
+
+
+@with_async_session
+async def get_users_by_ids(user_ids: list[str], session: AsyncSession) -> list[User]:
+    statement = select(User).where(User.id.in_(user_ids))
+    result = await session.exec(statement)
+    return result.all()

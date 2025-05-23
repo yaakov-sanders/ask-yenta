@@ -1,7 +1,7 @@
 import os
 from typing import Literal
 
-from letta_client import AsyncLetta
+from letta_client import AsyncLetta, CreateBlock
 from letta_client.types import (
     AgentState,
     Block,
@@ -34,12 +34,17 @@ async def create_block(label: BLOCK_TYPES, value: str) -> Block:
 
 
 async def create_agent(
-    identity_ids: list[str], chat_type: CHAT_TYPES, block_ids: list[str] | None = None
+    identity_ids: list[str],
+    chat_type: CHAT_TYPES,
+    block_ids: list[str] | None = None,
+    memory_blocks: list[CreateBlock] | None = None,
 ) -> AgentState:
     client = get_letta_client()
     kwargs = {}
     if block_ids:
         kwargs["block_ids"] = block_ids
+    if memory_blocks:
+        kwargs["memory_blocks"] = memory_blocks
     agent = await client.agents.create(
         tags=[chat_type],
         identity_ids=identity_ids,

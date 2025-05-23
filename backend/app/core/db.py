@@ -1,8 +1,9 @@
+from functools import wraps
+
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-import app.features.users.users_crud
 from app.core.config import settings
 from app.features.users.users_models import User, UserCreate
 
@@ -39,7 +40,9 @@ async def init_db(session: AsyncSession) -> None:
             full_name=settings.FIRST_SUPERUSER_NAME,
             is_superuser=True,
         )
-        await app.features.users.crud.create_user(session=session, user_create=user_in)
+        from app.features.users.users_api import create_user
+
+        await create_user(session=session, user_create=user_in)
 
 
 async def save_to_db(model: SQLModel):
@@ -47,3 +50,14 @@ async def save_to_db(model: SQLModel):
         session.add(model)
         await session.commit()
         await session.refresh(model)
+
+
+def with_async_session(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        if "session" in kwargs:
+            return await func(*args, **kwargs)
+        async with AsyncSession(engine) as session:
+            return await func(*args, session=session, **kwargs)
+
+    return wrapper

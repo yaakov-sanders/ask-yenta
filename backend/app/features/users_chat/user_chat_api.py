@@ -3,6 +3,7 @@ import logging
 from fastapi import APIRouter, Path, Query
 
 from app.features.chat.chat_utils import get_conversation_for_user
+from app.features.connections.connections_utils import validate_connections
 from app.features.core.api_deps import CurrentUser
 from app.features.letta_logic.letta_logic import (
     create_agent,
@@ -10,6 +11,7 @@ from app.features.letta_logic.letta_logic import (
     get_messages,
     send_message,
 )
+from app.features.users.users_crud import get_users_by_ids
 from app.features.users.users_utils import convert_identity_ids_to_user_ids
 from app.features.users_chat.user_chat_models import (
     UsersChatCreationResponse,
@@ -19,6 +21,7 @@ from app.features.users_chat.user_chat_models import (
     UsersMessageRequest,
     UsersMessageResponse,
     get_user_chat_messages,
+    UsersChatCreationRequest,
 )
 
 # Set up logger
@@ -56,11 +59,22 @@ async def get_chats(current_user: CurrentUser) -> UsersChatsResponse:
 
 
 @router.post("", response_model=UsersChatCreationResponse)
-async def create_chat(current_user: CurrentUser) -> UsersChatCreationResponse:
+async def create_chat(
+    chat_request: UsersChatCreationRequest, current_user: CurrentUser
+) -> UsersChatCreationResponse:
+    await validate_connections(current_user.id, chat_request.participant_ids)
+    participants = await get_users_by_ids(chat_request.participant_ids)
+    identity_ids = {participant.identity_id for participant in participants}
+    identity_ids.add(current_user.identity_id)
     conversation_agent = await create_agent(
-        identity_ids=[current_user.identity_id],
-        block_ids=[current_user.profile_block_id, current_user.yenta_block_id],
+        identity_ids=list(identity_ids),
         chat_type="users-chat",
+        memory_blocks=[
+            {
+                "label": "persona",
+                "value": "I am Yenta. My role is to observe conversations between participants, track their interactions, and remember what they share with each other.",
+            }
+        ],
     )
     return UsersChatCreationResponse(conversation_id=conversation_agent.id)
 
