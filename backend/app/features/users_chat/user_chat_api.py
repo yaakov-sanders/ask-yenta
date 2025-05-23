@@ -27,10 +27,10 @@ from app.features.users_chat.user_chat_models import (
 # Set up logger
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/users-chat", tags=["users-chat"])
+users_chat_router = APIRouter(prefix="/users-chat", tags=["users-chat"])
 
 
-@router.get("", response_model=UsersChatsResponse)
+@users_chat_router.get("", response_model=UsersChatsResponse)
 async def get_chats(current_user: CurrentUser) -> UsersChatsResponse:
     conversation_agents = await get_agents(
         identity_id=current_user.identity_id, chat_type="users-chat"
@@ -58,7 +58,7 @@ async def get_chats(current_user: CurrentUser) -> UsersChatsResponse:
     )
 
 
-@router.post("", response_model=UsersChatCreationResponse)
+@users_chat_router.post("", response_model=UsersChatCreationResponse)
 async def create_chat(
     chat_request: UsersChatCreationRequest, current_user: CurrentUser
 ) -> UsersChatCreationResponse:
@@ -79,7 +79,7 @@ async def create_chat(
     return UsersChatCreationResponse(conversation_id=conversation_agent.id)
 
 
-@router.post("/{chat_conversation_id}", response_model=UsersMessageResponse)
+@users_chat_router.post("/{chat_conversation_id}", response_model=UsersMessageResponse)
 async def chat_with_memory(
     chat_request: UsersMessageRequest,
     current_user: CurrentUser,
@@ -96,7 +96,9 @@ async def chat_with_memory(
     return UsersMessageResponse(messages=get_user_chat_messages(response.messages))
 
 
-@router.get("/{chat_conversation_id}", response_model=UsersChatHistoryResponse)
+@users_chat_router.get(
+    "/{chat_conversation_id}", response_model=UsersChatHistoryResponse
+)
 async def get_chat_history(
     current_user: CurrentUser,
     limit: int = Query(10, ge=1, le=50),

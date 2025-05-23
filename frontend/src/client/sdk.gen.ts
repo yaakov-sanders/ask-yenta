@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ConnectionsCreateConnectionData, ConnectionsCreateConnectionResponse, ConnectionsReadConnectionsData, ConnectionsReadConnectionsResponse, ConnectionsReadConnectionData, ConnectionsReadConnectionResponse, ConnectionsUpdateConnectionData, ConnectionsUpdateConnectionResponse, ConnectionsDeleteConnectionData, ConnectionsDeleteConnectionResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UsersCreatePrivateUserData, UsersCreatePrivateUserResponse, UtilsHealthCheckResponse, YentaChatGetChatsResponse, YentaChatCreateChatResponse, YentaChatChatWithMemoryData, YentaChatChatWithMemoryResponse, YentaChatGetChatHistoryData, YentaChatGetChatHistoryResponse } from './types.gen';
+import type { ConnectionsCreateConnectionData, ConnectionsCreateConnectionResponse, ConnectionsReadConnectionsData, ConnectionsReadConnectionsResponse, ConnectionsReadConnectionData, ConnectionsReadConnectionResponse, ConnectionsUpdateConnectionData, ConnectionsUpdateConnectionResponse, ConnectionsDeleteConnectionData, ConnectionsDeleteConnectionResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UsersCreatePrivateUserData, UsersCreatePrivateUserResponse, UsersChatGetChatsResponse, UsersChatCreateChatData, UsersChatCreateChatResponse, UsersChatChatWithMemoryData, UsersChatChatWithMemoryResponse, UsersChatGetChatHistoryData, UsersChatGetChatHistoryResponse, UtilsHealthCheckResponse, YentaChatGetChatsResponse, YentaChatCreateChatResponse, YentaChatChatWithMemoryData, YentaChatChatWithMemoryResponse, YentaChatGetChatHistoryData, YentaChatGetChatHistoryResponse } from './types.gen';
 
 export class ConnectionsService {
     /**
@@ -407,6 +407,89 @@ export class UsersService {
             url: '/api/v1/users/private/',
             body: data.requestBody,
             mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+}
+
+export class UsersChatService {
+    /**
+     * Get Chats
+     * @returns UsersChatsResponse Successful Response
+     * @throws ApiError
+     */
+    public static getChats(): CancelablePromise<UsersChatGetChatsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/users-chat'
+        });
+    }
+    
+    /**
+     * Create Chat
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns UsersChatCreationResponse Successful Response
+     * @throws ApiError
+     */
+    public static createChat(data: UsersChatCreateChatData): CancelablePromise<UsersChatCreateChatResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/users-chat',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Chat With Memory
+     * @param data The data for the request.
+     * @param data.chatConversationId
+     * @param data.requestBody
+     * @returns UsersMessageResponse Successful Response
+     * @throws ApiError
+     */
+    public static chatWithMemory(data: UsersChatChatWithMemoryData): CancelablePromise<UsersChatChatWithMemoryResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/users-chat/{chat_conversation_id}',
+            path: {
+                chat_conversation_id: data.chatConversationId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Get Chat History
+     * @param data The data for the request.
+     * @param data.chatConversationId
+     * @param data.limit
+     * @param data.lastMessageId
+     * @returns UsersChatHistoryResponse Successful Response
+     * @throws ApiError
+     */
+    public static getChatHistory(data: UsersChatGetChatHistoryData): CancelablePromise<UsersChatGetChatHistoryResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/users-chat/{chat_conversation_id}',
+            path: {
+                chat_conversation_id: data.chatConversationId
+            },
+            query: {
+                limit: data.limit,
+                last_message_id: data.lastMessageId
+            },
             errors: {
                 422: 'Validation Error'
             }

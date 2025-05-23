@@ -78,7 +78,43 @@ export type UserPublic = {
 export type UserRegister = {
     email: string;
     password: string;
-    full_name?: (string | null);
+    full_name: string;
+};
+
+export type UsersChatCreationRequest = {
+    participant_ids: Array<(string)>;
+};
+
+export type UsersChatCreationResponse = {
+    conversation_id: string;
+};
+
+export type UsersChatHistoryResponse = {
+    messages: Array<UsersChatMessage>;
+};
+
+export type UsersChatInfo = {
+    conversation_id: string;
+    name: string;
+    participant_ids: Array<(string)>;
+};
+
+export type UsersChatMessage = {
+    content: string;
+    message_type: string;
+    sender_id: string;
+};
+
+export type UsersChatsResponse = {
+    chats_info: Array<UsersChatInfo>;
+};
+
+export type UsersMessageRequest = {
+    message: string;
+};
+
+export type UsersMessageResponse = {
+    messages: Array<UsersChatMessage>;
 };
 
 export type UsersPublic = {
@@ -250,6 +286,29 @@ export type UsersCreatePrivateUserData = {
 };
 
 export type UsersCreatePrivateUserResponse = (UserPublic);
+
+export type UsersChatGetChatsResponse = (UsersChatsResponse);
+
+export type UsersChatCreateChatData = {
+    requestBody: UsersChatCreationRequest;
+};
+
+export type UsersChatCreateChatResponse = (UsersChatCreationResponse);
+
+export type UsersChatChatWithMemoryData = {
+    chatConversationId: string;
+    requestBody: UsersMessageRequest;
+};
+
+export type UsersChatChatWithMemoryResponse = (UsersMessageResponse);
+
+export type UsersChatGetChatHistoryData = {
+    chatConversationId: string;
+    lastMessageId?: (string | null);
+    limit?: number;
+};
+
+export type UsersChatGetChatHistoryResponse = (UsersChatHistoryResponse);
 
 export type UtilsHealthCheckResponse = (boolean);
 

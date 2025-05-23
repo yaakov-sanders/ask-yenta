@@ -23,10 +23,10 @@ from app.features.yenta_chat.yenta_chat_models import (
 # Set up logger
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/yenta-chat", tags=["yenta-chat"])
+yenta_chat_router = APIRouter(prefix="/yenta-chat", tags=["yenta-chat"])
 
 
-@router.get("", response_model=YentaChatsResponse)
+@yenta_chat_router.get("", response_model=YentaChatsResponse)
 async def get_chats(current_user: CurrentUser) -> YentaChatsResponse:
     conversation_agents = await get_agents(
         identity_id=current_user.identity_id, chat_type="yenta-chat"
@@ -39,7 +39,7 @@ async def get_chats(current_user: CurrentUser) -> YentaChatsResponse:
     )
 
 
-@router.post("", response_model=YentaChatCreationResponse)
+@yenta_chat_router.post("", response_model=YentaChatCreationResponse)
 async def create_chat(current_user: CurrentUser) -> YentaChatCreationResponse:
     conversation_agent = await create_agent(
         identity_ids=[current_user.identity_id],
@@ -49,7 +49,7 @@ async def create_chat(current_user: CurrentUser) -> YentaChatCreationResponse:
     return YentaChatCreationResponse(conversation_id=conversation_agent.id)
 
 
-@router.post("/{chat_conversation_id}", response_model=YentaMessageResponse)
+@yenta_chat_router.post("/{chat_conversation_id}", response_model=YentaMessageResponse)
 async def chat_with_memory(
     chat_request: YentaMessageRequest,
     current_user: CurrentUser,
@@ -66,7 +66,9 @@ async def chat_with_memory(
     return YentaMessageResponse(messages=get_yenta_chat_messages(response.messages))
 
 
-@router.get("/{chat_conversation_id}", response_model=YentaChatHistoryResponse)
+@yenta_chat_router.get(
+    "/{chat_conversation_id}", response_model=YentaChatHistoryResponse
+)
 async def get_chat_history(
     current_user: CurrentUser,
     limit: int = Query(10, ge=1, le=50),
