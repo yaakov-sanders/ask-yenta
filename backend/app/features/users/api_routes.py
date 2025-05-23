@@ -29,11 +29,7 @@ from app.utils import generate_new_account_email, send_email
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get(
-    "/",
-    dependencies=[Depends(get_current_active_superuser)],
-    response_model=UsersPublic,
-)
+@router.get("/", response_model=UsersPublic)
 async def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
     """
     Retrieve users.
@@ -234,7 +230,6 @@ async def create_private_user(user_in: PrivateUserCreate, session: SessionDep) -
         hashed_password=hashed_password,
         full_name=user_in.full_name,
         is_active=True,
-        is_verified=user_in.is_verified,
     )
     session.add(db_obj)
     await session.commit()

@@ -3,7 +3,121 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, UserProfileCreateProfileFromTextData, UserProfileCreateProfileFromTextResponse, UserProfileUpdateProfileFromTextData, UserProfileUpdateProfileFromTextResponse, UserProfileUpdateUserProfileData, UserProfileUpdateUserProfileResponse, UserProfileGetUserProfileData, UserProfileGetUserProfileResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UsersCreatePrivateUserData, UsersCreatePrivateUserResponse, UtilsHealthCheckResponse, YentaChatGetChatsResponse, YentaChatCreateChatResponse, YentaChatChatWithMemoryData, YentaChatChatWithMemoryResponse, YentaChatGetChatHistoryData, YentaChatGetChatHistoryResponse } from './types.gen';
+import type { ConnectionsCreateConnectionData, ConnectionsCreateConnectionResponse, ConnectionsReadConnectionsData, ConnectionsReadConnectionsResponse, ConnectionsReadConnectionData, ConnectionsReadConnectionResponse, ConnectionsUpdateConnectionData, ConnectionsUpdateConnectionResponse, ConnectionsDeleteConnectionData, ConnectionsDeleteConnectionResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UsersCreatePrivateUserData, UsersCreatePrivateUserResponse, UtilsHealthCheckResponse, YentaChatGetChatsResponse, YentaChatCreateChatResponse, YentaChatChatWithMemoryData, YentaChatChatWithMemoryResponse, YentaChatGetChatHistoryData, YentaChatGetChatHistoryResponse } from './types.gen';
+
+export class ConnectionsService {
+    /**
+     * Create Connection
+     * Create new connection request.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ConnectionPublic Successful Response
+     * @throws ApiError
+     */
+    public static createConnection(data: ConnectionsCreateConnectionData): CancelablePromise<ConnectionsCreateConnectionResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/connections/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Connections
+     * Retrieve connections.
+     * @param data The data for the request.
+     * @param data.status
+     * @param data.skip
+     * @param data.limit
+     * @returns ConnectionsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readConnections(data: ConnectionsReadConnectionsData = {}): CancelablePromise<ConnectionsReadConnectionsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/connections/',
+            query: {
+                status: data.status,
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Connection
+     * Get connection by ID.
+     * @param data The data for the request.
+     * @param data.connectionId
+     * @returns ConnectionPublic Successful Response
+     * @throws ApiError
+     */
+    public static readConnection(data: ConnectionsReadConnectionData): CancelablePromise<ConnectionsReadConnectionResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/connections/{connection_id}',
+            path: {
+                connection_id: data.connectionId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Connection
+     * Update a connection.
+     * @param data The data for the request.
+     * @param data.connectionId
+     * @param data.requestBody
+     * @returns ConnectionPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateConnection(data: ConnectionsUpdateConnectionData): CancelablePromise<ConnectionsUpdateConnectionResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/connections/{connection_id}',
+            path: {
+                connection_id: data.connectionId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Connection
+     * Delete a connection.
+     * @param data The data for the request.
+     * @param data.connectionId
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static deleteConnection(data: ConnectionsDeleteConnectionData): CancelablePromise<ConnectionsDeleteConnectionResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/connections/{connection_id}',
+            path: {
+                connection_id: data.connectionId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+}
 
 export class LoginService {
     /**
@@ -94,110 +208,6 @@ export class LoginService {
             url: '/api/v1/password-recovery-html-content/{email}',
             path: {
                 email: data.email
-            },
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-}
-
-export class UserProfileService {
-    /**
-     * Create Profile From Text
-     * Create a new user profile from free-form text, which will be parsed by an LLM
-     * into structured JSON and stored in the database.
-     *
-     * Returns 409 Conflict if a profile already exists for this user.
-     * @param data The data for the request.
-     * @param data.userId
-     * @param data.requestBody
-     * @returns UserProfileResponse Successful Response
-     * @throws ApiError
-     */
-    public static createProfileFromText(data: UserProfileCreateProfileFromTextData): CancelablePromise<UserProfileCreateProfileFromTextResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/v1/users/{user_id}/profile-text',
-            path: {
-                user_id: data.userId
-            },
-            body: data.requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
-     * Update Profile From Text
-     * Update an existing user profile with free-form text.
-     *
-     * The LLM will analyze the existing profile and the new text,
-     * then intelligently merge them to create an updated profile.
-     *
-     * Returns 404 Not Found if no profile exists for this user.
-     * @param data The data for the request.
-     * @param data.userId
-     * @param data.requestBody
-     * @returns UserProfileResponse Successful Response
-     * @throws ApiError
-     */
-    public static updateProfileFromText(data: UserProfileUpdateProfileFromTextData): CancelablePromise<UserProfileUpdateProfileFromTextResponse> {
-        return __request(OpenAPI, {
-            method: 'PUT',
-            url: '/api/v1/users/{user_id}/profile-text',
-            path: {
-                user_id: data.userId
-            },
-            body: data.requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
-     * Update User Profile
-     * Update an existing user profile directly with provided data.
-     * @param data The data for the request.
-     * @param data.userId
-     * @param data.requestBody
-     * @returns UserProfileResponse Successful Response
-     * @throws ApiError
-     */
-    public static updateUserProfile(data: UserProfileUpdateUserProfileData): CancelablePromise<UserProfileUpdateUserProfileResponse> {
-        return __request(OpenAPI, {
-            method: 'PATCH',
-            url: '/api/v1/users/{user_id}/profile',
-            path: {
-                user_id: data.userId
-            },
-            body: data.requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
-     * Get User Profile
-     * Get the user profile summary generated by the LLM.
-     * @param data The data for the request.
-     * @param data.userId
-     * @returns UserLLMProfileSummary Successful Response
-     * @throws ApiError
-     */
-    public static getUserProfile(data: UserProfileGetUserProfileData): CancelablePromise<UserProfileGetUserProfileResponse> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/users/{user_id}/profile',
-            path: {
-                user_id: data.userId
             },
             errors: {
                 422: 'Validation Error'

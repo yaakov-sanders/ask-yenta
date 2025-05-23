@@ -35,9 +35,9 @@ export function useColorMode(): UseColorModeReturn {
   }
 }
 
-export function useColorModeValue<T>(light: T, dark: T) {
+export function useColorModeValue(lightValue: string, darkValue: string) {
   const { colorMode } = useColorMode()
-  return colorMode === "dark" ? dark : light
+  return colorMode === "light" ? lightValue : darkValue
 }
 
 export function ColorModeIcon() {

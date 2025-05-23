@@ -9,6 +9,31 @@ export type Body_login_login_access_token = {
     client_secret?: (string | null);
 };
 
+export type ConnectionCreate = {
+    status?: ConnectionStatus;
+    target_user_id: string;
+};
+
+export type ConnectionPublic = {
+    status?: ConnectionStatus;
+    id: string;
+    source_user_id: string;
+    target_user_id: string;
+    created_at: string;
+    updated_at: string;
+};
+
+export type ConnectionsPublic = {
+    data: Array<ConnectionPublic>;
+    count: number;
+};
+
+export type ConnectionStatus = 'pending' | 'accepted' | 'rejected';
+
+export type ConnectionUpdate = {
+    status?: ConnectionStatus;
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -36,40 +61,17 @@ export type Token = {
 
 export type UserCreate = {
     email: string;
+    full_name: string;
     is_active?: boolean;
     is_superuser?: boolean;
-    full_name?: (string | null);
     password: string;
-};
-
-export type UserLLMProfileSummary = {
-    user_id: string;
-    profile_summary: string;
-    updated_at: string;
-};
-
-export type UserProfileResponse = {
-    status: string;
-    profile: {
-        [key: string]: unknown;
-    };
-};
-
-export type UserProfileText = {
-    text: string;
-};
-
-export type UserProfileUpdate = {
-    data: {
-        [key: string]: (unknown | null);
-    };
 };
 
 export type UserPublic = {
     email: string;
+    full_name: string;
     is_active?: boolean;
     is_superuser?: boolean;
-    full_name?: (string | null);
     id: string;
 };
 
@@ -86,9 +88,9 @@ export type UsersPublic = {
 
 export type UserUpdate = {
     email?: (string | null);
+    full_name: string;
     is_active?: boolean;
     is_superuser?: boolean;
-    full_name?: (string | null);
     password?: (string | null);
 };
 
@@ -136,6 +138,39 @@ export type YentaMessageResponse = {
     messages: Array<YentaMessage>;
 };
 
+export type ConnectionsCreateConnectionData = {
+    requestBody: ConnectionCreate;
+};
+
+export type ConnectionsCreateConnectionResponse = (ConnectionPublic);
+
+export type ConnectionsReadConnectionsData = {
+    limit?: number;
+    skip?: number;
+    status?: (ConnectionStatus | null);
+};
+
+export type ConnectionsReadConnectionsResponse = (ConnectionsPublic);
+
+export type ConnectionsReadConnectionData = {
+    connectionId: string;
+};
+
+export type ConnectionsReadConnectionResponse = (ConnectionPublic);
+
+export type ConnectionsUpdateConnectionData = {
+    connectionId: string;
+    requestBody: ConnectionUpdate;
+};
+
+export type ConnectionsUpdateConnectionResponse = (ConnectionPublic);
+
+export type ConnectionsDeleteConnectionData = {
+    connectionId: string;
+};
+
+export type ConnectionsDeleteConnectionResponse = (unknown);
+
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;
 };
@@ -161,33 +196,6 @@ export type LoginRecoverPasswordHtmlContentData = {
 };
 
 export type LoginRecoverPasswordHtmlContentResponse = (string);
-
-export type UserProfileCreateProfileFromTextData = {
-    requestBody: UserProfileText;
-    userId: string;
-};
-
-export type UserProfileCreateProfileFromTextResponse = (UserProfileResponse);
-
-export type UserProfileUpdateProfileFromTextData = {
-    requestBody: UserProfileText;
-    userId: string;
-};
-
-export type UserProfileUpdateProfileFromTextResponse = (UserProfileResponse);
-
-export type UserProfileUpdateUserProfileData = {
-    requestBody: UserProfileUpdate;
-    userId: string;
-};
-
-export type UserProfileUpdateUserProfileResponse = (UserProfileResponse);
-
-export type UserProfileGetUserProfileData = {
-    userId: string;
-};
-
-export type UserProfileGetUserProfileResponse = (UserLLMProfileSummary);
 
 export type UsersReadUsersData = {
     limit?: number;
