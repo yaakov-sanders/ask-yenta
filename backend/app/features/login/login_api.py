@@ -5,8 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
-import app.features.login.login_crud
-import app.features.users.users_crud
 from app.core import security
 from app.core.config import settings
 from app.core.security import get_password_hash
@@ -16,7 +14,9 @@ from app.features.core.api_deps import (
     get_current_active_superuser,
 )
 from app.features.core.models import Message
+from app.features.login.login_crud import authenticate
 from app.features.login.login_models import NewPassword, Token
+from app.features.users.users_crud import get_user_by_email
 from app.features.users.users_models import UserPublic
 from app.utils import (
     generate_password_reset_token,
@@ -35,7 +35,7 @@ async def login_access_token(
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    user = await app.features.login.crud.authenticate(
+    user = await authenticate(
         session=session, email=form_data.username, password=form_data.password
     )
     if not user:
@@ -64,7 +64,7 @@ async def recover_password(email: str, session: SessionDep) -> Message:
     """
     Password Recovery
     """
-    user = await app.features.users.crud.get_user_by_email(session=session, email=email)
+    user = await get_user_by_email(session=session, email=email)
 
     if not user:
         raise HTTPException(
@@ -91,7 +91,7 @@ async def reset_password(session: SessionDep, body: NewPassword) -> Message:
     email = verify_password_reset_token(token=body.token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
-    user = await app.features.users.crud.get_user_by_email(session=session, email=email)
+    user = await get_user_by_email(session=session, email=email)
     if not user:
         raise HTTPException(
             status_code=404,
@@ -115,7 +115,7 @@ async def recover_password_html_content(email: str, session: SessionDep) -> Any:
     """
     HTML Content for Password Recovery
     """
-    user = await app.features.users.crud.get_user_by_email(session=session, email=email)
+    user = await get_user_by_email(session=session, email=email)
 
     if not user:
         raise HTTPException(

@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as UserChatImport } from './routes/user-chat'
 import { Route as SignupImport } from './routes/signup'
 import { Route as ResetPasswordImport } from './routes/reset-password'
 import { Route as RecoverPasswordImport } from './routes/recover-password'
@@ -20,6 +21,11 @@ import { Route as ChatImport } from './routes/chat'
 import { Route as LayoutImport } from './routes/_layout'
 
 // Create/Update Routes
+
+const UserChatRoute = UserChatImport.update({
+  path: '/user-chat',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const SignupRoute = SignupImport.update({
   path: '/signup',
@@ -88,6 +94,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupImport
       parentRoute: typeof rootRoute
     }
+    '/user-chat': {
+      preLoaderRoute: typeof UserChatImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -101,6 +111,7 @@ export const routeTree = rootRoute.addChildren([
   RecoverPasswordRoute,
   ResetPasswordRoute,
   SignupRoute,
+  UserChatRoute,
 ])
 
 /* prettier-ignore-end */

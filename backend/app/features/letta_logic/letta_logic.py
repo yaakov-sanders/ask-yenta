@@ -38,6 +38,7 @@ async def create_agent(
     chat_type: CHAT_TYPES,
     block_ids: list[str] | None = None,
     memory_blocks: list[CreateBlock] | None = None,
+    tools: list[str] | None = None,
 ) -> AgentState:
     client = get_letta_client()
     kwargs = {}
@@ -45,6 +46,8 @@ async def create_agent(
         kwargs["block_ids"] = block_ids
     if memory_blocks:
         kwargs["memory_blocks"] = memory_blocks
+    if tools:
+        kwargs["tools"] = tools
     agent = await client.agents.create(
         tags=[chat_type],
         identity_ids=identity_ids,
@@ -67,11 +70,14 @@ async def get_agent_by_id(agent_id: str) -> AgentState:
     return agent
 
 
-async def send_message(agent_id: str, sender_id: str, message: str) -> LettaResponse:
+async def send_message(
+    agent_id: str, sender_id: str, message: str, use_assistant_message=True
+) -> LettaResponse:
     client = get_letta_client()
     response = await client.agents.messages.create(
         agent_id=agent_id,
         messages=[{"role": "user", "content": message, "sender_id": sender_id}],
+        use_assistant_message=use_assistant_message,
     )
     return response
 

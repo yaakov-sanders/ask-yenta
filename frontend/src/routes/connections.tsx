@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Box, VStack, HStack, Button, Text, Input, Spinner } from "@chakra-ui/react"
-import { ConnectionsService, UsersService } from "../client"
+import { ConnectionsService, UsersService, UsersChatService } from "../client"
 import { useState, useMemo } from "react"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useColorModeValue } from "@/components/ui/color-mode"
 import type { ConnectionPublic, UserPublic } from "../client/types.gen"
 
@@ -13,6 +13,7 @@ export const Route = createFileRoute('/connections')({
 function ConnectionsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
   // Get current user
   const { data: currentUser, isLoading: userLoading } = useQuery({
@@ -67,6 +68,18 @@ function ConnectionsPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["connections"] })
+    },
+  })
+
+  // Create chat
+  const createChatMutation = useMutation({
+    mutationFn: (participantId: string) =>
+      UsersChatService.createChat({
+        requestBody: { participant_ids: [participantId] },
+      }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["userChats"] })
+      navigate({ to: '/user-chat', search: { chatId: data.conversation_id } })
     },
   })
 
@@ -181,8 +194,17 @@ function ConnectionsPage() {
                     borderColor={borderColor}
                     borderWidth="1px"
                     borderRadius="md"
+                    justify="space-between"
                   >
                     <Text color={textColor}>{otherUser?.email || otherUserId}</Text>
+                    <Button
+                      size="sm"
+                      colorScheme="blue"
+                      onClick={() => createChatMutation.mutate(otherUserId)}
+                      loading={createChatMutation.isPending}
+                    >
+                      Chat
+                    </Button>
                   </HStack>
                 )
               })}

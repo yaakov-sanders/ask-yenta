@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import APIRouter, Path, Query
+from letta_client import CreateBlock
 
 from app.features.chat.chat_utils import get_conversation_for_user
 from app.features.connections.connections_utils import validate_connections
@@ -69,11 +70,23 @@ async def create_chat(
     conversation_agent = await create_agent(
         identity_ids=list(identity_ids),
         chat_type="users-chat",
+        tools=["summarize_interaction"],
         memory_blocks=[
-            {
-                "label": "persona",
-                "value": "I am Yenta. My role is to observe conversations between participants, track their interactions, and remember what they share with each other.",
-            }
+            CreateBlock(
+                label="interactions",
+                value="",
+            ),
+            CreateBlock(
+                label="persona",
+                value="""You are Yenta. You silently observe this group chat. Your job is to track what each participant shares, learns, or reveals throughout the conversation.
+For each message, determine if it expresses something meaningful — such as plans, preferences, opinions, or relationship dynamics.
+When it does, use the `summarize_interaction` tool to capture:
+- who said it,
+- the original message,
+- and a clear, concise insight about what was revealed.
+Only store meaningful takeaways, not every message. Do not reply to users.
+""",
+            ),
         ],
     )
     return UsersChatCreationResponse(conversation_id=conversation_agent.id)
@@ -92,8 +105,10 @@ async def chat_with_memory(
         agent_id=chat_conversation_id,
         sender_id=current_user.identity_id,
         message=chat_request.message,
+        use_assistant_message=False,
     )
-    return UsersMessageResponse(messages=get_user_chat_messages(response.messages))
+    messages = await get_user_chat_messages(response.messages)
+    return UsersMessageResponse(messages=messages)
 
 
 @users_chat_router.get(
@@ -111,6 +126,6 @@ async def get_chat_history(
     messages = await get_messages(
         agent_id=conversation.id, limit=limit, message_id=last_message_id
     )
-    return UsersChatHistoryResponse(
-        messages=get_user_chat_messages(messages),
-    )
+    messages = await get_user_chat_messages(messages)
+
+    return UsersChatHistoryResponse(messages=messages)
