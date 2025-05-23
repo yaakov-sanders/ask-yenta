@@ -7,7 +7,7 @@ from app.features.core.api_deps import get_current_user, get_db
 from app.features.connections import crud, models
 from app.features.users.models import User
 
-router = APIRouter()
+router = APIRouter(prefix="/connections", tags=["connections"])
 
 
 @router.post("/", response_model=models.ConnectionPublic)
@@ -104,4 +104,4 @@ async def delete_connection(
     ) != str(current_user.id):
         raise HTTPException(status_code=403, detail="Not enough permissions")
     await crud.delete_connection(session=session, connection=connection)
-    return {"ok": True} 
+    return {"ok": True}

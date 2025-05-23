@@ -2,11 +2,10 @@ import logging
 import traceback
 from collections.abc import Callable
 from contextlib import asynccontextmanager
-from http.client import HTTPException
 
 import pydevd_pycharm
 import sentry_sdk
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -30,8 +29,9 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         try:
             return await call_next(request)
-        except HTTPException:
-            raise
+        except HTTPException as e:
+            logger.error(e.detail)
+            raise e
         except Exception as e:
             logger.error(
                 f"Unhandled exception: {type(e).__name__}: {str(e)}\n"

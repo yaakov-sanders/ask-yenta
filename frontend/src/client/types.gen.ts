@@ -110,7 +110,7 @@ export type YentaChatCreationResponse = {
 };
 
 export type YentaChatHistoryResponse = {
-    messages: Array<YentaMessage>;
+    messages: Array<YentaChatMessage>;
 };
 
 export type YentaChatInfo = {
@@ -118,11 +118,7 @@ export type YentaChatInfo = {
     name: string;
 };
 
-export type YentaChatsResponse = {
-    chats_info: Array<YentaChatInfo>;
-};
-
-export type YentaMessage = {
+export type YentaChatMessage = {
     content: string;
     message_type: string;
     role: 'user' | 'yenta';
@@ -130,12 +126,16 @@ export type YentaMessage = {
 
 export type role = 'user' | 'yenta';
 
+export type YentaChatsResponse = {
+    chats_info: Array<YentaChatInfo>;
+};
+
 export type YentaMessageRequest = {
     message: string;
 };
 
 export type YentaMessageResponse = {
-    messages: Array<YentaMessage>;
+    messages: Array<YentaChatMessage>;
 };
 
 export type ConnectionsCreateConnectionData = {

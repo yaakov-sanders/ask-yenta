@@ -35,6 +35,7 @@ async def create_user(*, session: AsyncSession, user_create: UserCreate) -> User
     await session.refresh(user)
     await create_letta_fields(user)
     await session.commit()
+    await session.refresh(user)
     return user
 
 
