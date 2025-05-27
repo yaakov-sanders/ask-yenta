@@ -55,7 +55,7 @@ async def get_user_chat_messages(
         ):
             res.append(
                 UsersChatMessage(
-                    content=message.content,
+                    content=message.content[len(message.sender_id) + 1 :],
                     message_type=message.message_type,
                     sender_id=identity_ids_to_user_ids[message.sender_id],
                 )

@@ -70,14 +70,33 @@ async def get_agent_by_id(agent_id: str) -> AgentState:
     return agent
 
 
-async def send_message(
-    agent_id: str, sender_id: str, message: str, use_assistant_message=True
+async def send_message_to_yenta(
+    agent_id: str, sender_id: str, message: str
 ) -> LettaResponse:
     client = get_letta_client()
     response = await client.agents.messages.create(
         agent_id=agent_id,
         messages=[{"role": "user", "content": message, "sender_id": sender_id}],
-        use_assistant_message=use_assistant_message,
+    )
+    return response
+
+
+async def send_message_to_users_chat(
+    agent_id: str,
+    sender_id: str,
+    message: str,
+    recipients: list[str],
+) -> LettaResponse:
+    client = get_letta_client()
+    response = await client.agents.messages.create(
+        agent_id=agent_id,
+        messages=[
+            {
+                "role": "user",
+                "content": f"{sender_id}:{message}",
+                "sender_id": sender_id,
+            }
+        ],
     )
     return response
 

@@ -8,7 +8,7 @@ from app.features.letta_logic.letta_logic import (
     create_agent,
     get_agents,
     get_messages,
-    send_message,
+    send_message_to_yenta,
 )
 from app.features.yenta_chat.yenta_chat_models import (
     YentaChatCreationResponse,
@@ -58,7 +58,7 @@ async def chat_with_memory(
     await get_conversation_for_user(
         current_user=current_user, chat_conversation_id=chat_conversation_id
     )
-    response = await send_message(
+    response = await send_message_to_yenta(
         agent_id=chat_conversation_id,
         sender_id=current_user.identity_id,
         message=chat_request.message,

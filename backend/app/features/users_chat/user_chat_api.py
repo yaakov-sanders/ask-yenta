@@ -10,7 +10,7 @@ from app.features.letta_logic.letta_logic import (
     create_agent,
     get_agents,
     get_messages,
-    send_message,
+    send_message_to_users_chat,
 )
 from app.features.users.users_crud import get_users_by_ids
 from app.features.users.users_utils import convert_identity_ids_to_user_ids
@@ -80,6 +80,7 @@ async def create_chat(
                 label="persona",
                 value="""You are Yenta. You silently observe this group chat. Your job is to track what each participant shares, learns, or reveals throughout the conversation.
 For each message, determine if it expresses something meaningful — such as plans, preferences, opinions, or relationship dynamics.
+You will receive messages in the following format: {user_id}:{message_content}
 When it does, use the `summarize_interaction` tool to capture:
 - who said it,
 - the original message,
@@ -98,14 +99,16 @@ async def chat_with_memory(
     current_user: CurrentUser,
     chat_conversation_id: str = Path(),
 ) -> UsersMessageResponse:
-    await get_conversation_for_user(
+    conversation = await get_conversation_for_user(
         current_user=current_user, chat_conversation_id=chat_conversation_id
     )
-    response = await send_message(
+    response = await send_message_to_users_chat(
         agent_id=chat_conversation_id,
         sender_id=current_user.identity_id,
         message=chat_request.message,
-        use_assistant_message=False,
+        recipients=[
+            ii for ii in conversation.identity_ids if ii != current_user.identity_id
+        ],
     )
     messages = await get_user_chat_messages(response.messages)
     return UsersMessageResponse(messages=messages)
