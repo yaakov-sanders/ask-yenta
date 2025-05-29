@@ -24,7 +24,8 @@
     "react-dom": "^18.2.0",
     "react-error-boundary": "^5.0.0",
     "react-hook-form": "7.49.3",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "react-mentions": "^4.4.10"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
@@ -35,6 +36,7 @@
     "@types/node": "^22.15.3",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
+    "@types/react-mentions": "^4.4.1",
     "@vitejs/plugin-react-swc": "^3.9.0",
     "dotenv": "^16.4.5",
     "typescript": "^5.2.2",

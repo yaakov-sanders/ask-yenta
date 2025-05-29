@@ -1,3 +1,4 @@
+import asyncio
 import os
 from typing import Literal
 
@@ -11,7 +12,7 @@ from letta_client.types import (
     LettaResponse,
 )
 
-BLOCK_TYPES = Literal["human", "persona"]
+BLOCK_TYPES = Literal["human", "persona", "interactions"]
 CHAT_TYPES = Literal["yenta-chat", "users-chat"]
 LETTA_URL = os.getenv("LETTA_URL", "http://localhost:8283")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -34,7 +35,7 @@ async def create_block(label: BLOCK_TYPES, value: str) -> Block:
 
 
 async def create_agent(
-    identity_ids: list[str],
+    user_ids: list[str],
     chat_type: CHAT_TYPES,
     block_ids: list[str] | None = None,
     memory_blocks: list[CreateBlock] | None = None,
@@ -49,8 +50,7 @@ async def create_agent(
     if tools:
         kwargs["tools"] = tools
     agent = await client.agents.create(
-        tags=[chat_type],
-        identity_ids=identity_ids,
+        tags=[chat_type] + user_ids,
         model="openai/gpt-4o-mini",
         embedding="openai/text-embedding-3-small",
         **kwargs,
@@ -58,9 +58,9 @@ async def create_agent(
     return agent
 
 
-async def get_agents(identity_id: str, chat_type: CHAT_TYPES) -> list[AgentState]:
+async def get_agents(user_id: str, chat_type: CHAT_TYPES) -> list[AgentState]:
     client = get_letta_client()
-    agents = await client.agents.list(identity_id=identity_id, tags=[chat_type])
+    agents = await client.agents.list(tags=[chat_type, user_id], match_all_tags=True)
     return agents
 
 
@@ -71,12 +71,35 @@ async def get_agent_by_id(agent_id: str) -> AgentState:
 
 
 async def send_message_to_yenta(
-    agent_id: str, sender_id: str, message: str
+    current_user_id: str, agent_id: str, message: str, mentioned_ids: list[str]
 ) -> LettaResponse:
     client = get_letta_client()
+    shared_agents = await client.agents.list(
+        tags=[current_user_id] + mentioned_ids, match_all_tags=True
+    )
+    summary = []
+    block_ids = []
+    for agent in shared_agents:
+        for block in agent.memory.blocks:
+            if block.label == "interactions":
+                summary.append(block.value)
+                block_ids.append(block.id)
+
+    await asyncio.gather(
+        *[client.agents.blocks.attach(agent_id, block_id) for block_id in block_ids]
+    )
+    interactions_summary = "\n".join(summary)
     response = await client.agents.messages.create(
         agent_id=agent_id,
-        messages=[{"role": "user", "content": message, "sender_id": sender_id}],
+        messages=[
+            {
+                "role": "user",
+                "content": message,
+            }
+        ],
+    )
+    await asyncio.gather(
+        *[client.agents.blocks.detach(agent_id, block_id) for block_id in block_ids]
     )
     return response
 
@@ -85,7 +108,6 @@ async def send_message_to_users_chat(
     agent_id: str,
     sender_id: str,
     message: str,
-    recipients: list[str],
 ) -> LettaResponse:
     client = get_letta_client()
     response = await client.agents.messages.create(
@@ -94,7 +116,6 @@ async def send_message_to_users_chat(
             {
                 "role": "user",
                 "content": f"{sender_id}:{message}",
-                "sender_id": sender_id,
             }
         ],
     )

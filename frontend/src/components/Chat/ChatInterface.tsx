@@ -2,6 +2,10 @@ import { Box, VStack, HStack, Input, Button, Text, Flex } from "@chakra-ui/react
 import { useColorModeValue } from "../../components/ui/color-mode"
 import { useState } from "react"
 import * as React from "react"
+import { MentionsInput, Mention } from 'react-mentions'
+import { useQuery } from "@tanstack/react-query"
+import { ConnectionsService, UsersService } from "../../client"
+import type { UserPublic } from "../../client/types.gen"
 
 interface Message {
   content: string
@@ -34,7 +38,45 @@ export function ChatInterface({
   const textColor = useColorModeValue("gray.800", "white")
   const inputBg = useColorModeValue("gray.50", "gray.900")
   const sidebarBg = useColorModeValue("gray.50", "gray.900")
-  const sidebarActiveBg = useColorModeValue("gray.100", "gray.700")
+  const mentionBg = useColorModeValue("blue.100", "blue.900")
+  const mentionTextColor = useColorModeValue("blue.800", "blue.100")
+
+  // Fetch active connections
+  const { data: connections } = useQuery({
+    queryKey: ["connections", "accepted"],
+    queryFn: () => ConnectionsService.readConnections({ status: "accepted" }),
+  })
+
+  // Fetch all users to map connection IDs to user info
+  const { data: allUsers } = useQuery({
+    queryKey: ["allUsers"],
+    queryFn: () => UsersService.readUsers(),
+  })
+
+  // Create a map of user IDs to user info
+  const userMap = React.useMemo(() => {
+    const map: Record<string, UserPublic> = {}
+    allUsers?.data.forEach((u) => { map[u.id] = u })
+    return map
+  }, [allUsers])
+
+  // Get connected users
+  const connectedUsers = React.useMemo(() => {
+    if (!connections?.data || !userMap) return []
+    
+    return connections.data
+      .map(conn => {
+        const userId = conn.source_user_id === currentUserId 
+          ? conn.target_user_id 
+          : conn.source_user_id
+        return userMap[userId]
+      })
+      .filter(Boolean)
+      .map(user => ({
+        id: user.id,
+        display: user.full_name || user.email,
+      }))
+  }, [connections, userMap, currentUserId])
 
   const handleSend = () => {
     if (message.trim()) {
@@ -79,19 +121,64 @@ export function ChatInterface({
             </Box>
           ))}
           <HStack mt={4}>
-            <Input
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your message..."
-              bg={inputBg}
-              color={textColor}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSend()
-                }
-              }}
-            />
+            <Box flex={1}>
+              <MentionsInput
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type your message..."
+                style={{
+                  control: {
+                    backgroundColor: inputBg,
+                    color: textColor,
+                    borderRadius: 'md',
+                    border: `1px solid ${borderColor}`,
+                    padding: '8px',
+                    minHeight: '40px',
+                    width: '100%',
+                  },
+                  input: {
+                    color: textColor,
+                    margin: 0,
+                    padding: 0,
+                    width: '100%',
+                    minHeight: '24px',
+                  },
+                  suggestions: {
+                    backgroundColor: bgColor,
+                    border: `1px solid ${borderColor}`,
+                    borderRadius: 'md',
+                    marginTop: '4px',
+                  },
+                  '&singleLine': {
+                    display: 'inline-block',
+                    width: '100%',
+                  },
+                  '&multiLine': {
+                    input: {
+                      height: 'auto',
+                      overflow: 'auto',
+                    },
+                  },
+                }}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSend()
+                  }
+                }}
+              >
+                <Mention
+                  trigger="@"
+                  data={connectedUsers}
+                  style={{
+                    backgroundColor: mentionBg,
+                    color: mentionTextColor,
+                    padding: '2px 4px',
+                    borderRadius: '4px',
+                  }}
+                />
+              </MentionsInput>
+            </Box>
             <Button
               colorScheme="blue"
               onClick={handleSend}

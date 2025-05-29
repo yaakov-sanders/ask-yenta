@@ -1,10 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Box, VStack, Text } from "@chakra-ui/react"
-import { YentaChatService } from "../client"
+import { Box, VStack, Text, Button } from "@chakra-ui/react"
+import { YentaChatService } from "@/client"
 import { useMemo } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useColorModeValue } from "@/components/ui/color-mode"
-import type { YentaChatInfo, YentaChatMessage } from "../client/types.gen"
 import { ChatInterface } from "../components/Chat/ChatInterface"
 
 export const Route = createFileRoute('/chat')({
@@ -72,6 +71,14 @@ function ChatPage() {
       <Text fontSize="xl" fontWeight="bold" color={textColor} mb={4}>
         Chats
       </Text>
+      <Button
+        colorScheme="blue"
+        mb={4}
+        onClick={() => createChatMutation.mutate()}
+        loading={createChatMutation.isPending}
+      >
+        New Chat
+      </Button>
       <VStack align="stretch" gap={1}>
         {chats?.chats_info.map((chat) => (
           <Box

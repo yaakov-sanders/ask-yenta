@@ -24,6 +24,7 @@ class YentaChatCreationResponse(BaseModel):
 
 class YentaMessageRequest(BaseModel):
     message: str
+    mentioned_user_ids: list[str] = []
 
 
 class YentaChatMessage(BaseModel):

@@ -39,7 +39,6 @@ class User(UserBase, table=True):
     hashed_password: str = Field(max_length=255)
     profile_block_id: str | None = Field(None, max_length=255)
     yenta_block_id: str | None = Field(None, max_length=255)
-    identity_id: str | None = Field(None, max_length=255)
 
 
 # Properties to return via API, id is always required

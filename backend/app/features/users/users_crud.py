@@ -6,13 +6,12 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.db import with_async_session
 from app.core.security import get_password_hash
-from app.features.letta_logic.letta_logic import create_block, create_identity
+from app.features.letta_logic.letta_logic import create_block
 from app.features.users.users_models import User, UserCreate, UserUpdate
 
 
 async def create_letta_fields(user: User):
-    user_identity, yenta_block, profile_block = await asyncio.gather(
-        create_identity(str(user.id), user.full_name, "user"),
+    yenta_block, profile_block = await asyncio.gather(
         create_block(
             "persona",
             "You are Yenta — a warm, witty, and perceptive AI who remembers everything about the user and helps them understand themselves and others better. You speak like a nosy best friend with good intentions and great instincts. Be smart, honest, and a little cheeky.",
@@ -20,10 +19,9 @@ async def create_letta_fields(user: User):
         create_block("human", f"Profile: {user.full_name}"),
     )
 
-    user.profile_block_id, user.yenta_block_id, user.identity_id = (
+    user.profile_block_id, user.yenta_block_id = (
         profile_block.id,
         yenta_block.id,
-        user_identity.id,
     )
 
 

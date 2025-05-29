@@ -11,9 +11,8 @@ from app.features.letta_logic.letta_logic import (
     get_agents,
     get_messages,
     send_message_to_users_chat,
+    create_block,
 )
-from app.features.users.users_crud import get_users_by_ids
-from app.features.users.users_utils import convert_identity_ids_to_user_ids
 from app.features.users_chat.user_chat_models import (
     UsersChatCreationResponse,
     UsersChatHistoryResponse,
@@ -34,25 +33,17 @@ users_chat_router = APIRouter(prefix="/users-chat", tags=["users-chat"])
 @users_chat_router.get("", response_model=UsersChatsResponse)
 async def get_chats(current_user: CurrentUser) -> UsersChatsResponse:
     conversation_agents = await get_agents(
-        identity_id=current_user.identity_id, chat_type="users-chat"
+        user_id=current_user.id, chat_type="users-chat"
     )
-    identity_ids = set()
+    user_ids = set()
     for agent in conversation_agents:
-        identity_ids.update(agent.identity_ids)
-    identity_ids_to_user_ids = await convert_identity_ids_to_user_ids(
-        list(identity_ids)
-    )
+        user_ids.update(agent.tags)
     return UsersChatsResponse(
         chats_info=[
             UsersChatInfo(
                 conversation_id=a.id,
                 name=a.name,
-                participant_ids=[
-                    identity_ids_to_user_ids.get(
-                        ii, "00000000-0000-0000-0000-000000000000"
-                    )
-                    for ii in a.identity_ids
-                ],
+                participant_ids=[ui for ui in user_ids if len(ui) == 36],
             )
             for a in conversation_agents
         ]
@@ -64,18 +55,13 @@ async def create_chat(
     chat_request: UsersChatCreationRequest, current_user: CurrentUser
 ) -> UsersChatCreationResponse:
     await validate_connections(current_user.id, chat_request.participant_ids)
-    participants = await get_users_by_ids(chat_request.participant_ids)
-    identity_ids = {participant.identity_id for participant in participants}
-    identity_ids.add(current_user.identity_id)
+    interactions_block = await create_block("interactions", "")
     conversation_agent = await create_agent(
-        identity_ids=list(identity_ids),
+        user_ids=chat_request.participant_ids + [current_user.id],
         chat_type="users-chat",
         tools=["summarize_interaction"],
+        block_ids=[interactions_block.id],
         memory_blocks=[
-            CreateBlock(
-                label="interactions",
-                value="",
-            ),
             CreateBlock(
                 label="persona",
                 value="""You are Yenta. You silently observe this group chat. Your job is to track what each participant shares, learns, or reveals throughout the conversation.
@@ -99,16 +85,13 @@ async def chat_with_memory(
     current_user: CurrentUser,
     chat_conversation_id: str = Path(),
 ) -> UsersMessageResponse:
-    conversation = await get_conversation_for_user(
+    await get_conversation_for_user(
         current_user=current_user, chat_conversation_id=chat_conversation_id
     )
     response = await send_message_to_users_chat(
         agent_id=chat_conversation_id,
-        sender_id=current_user.identity_id,
+        sender_id=current_user.id,
         message=chat_request.message,
-        recipients=[
-            ii for ii in conversation.identity_ids if ii != current_user.identity_id
-        ],
     )
     messages = await get_user_chat_messages(response.messages)
     return UsersMessageResponse(messages=messages)

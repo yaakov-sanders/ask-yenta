@@ -4,7 +4,6 @@ from letta_client.types.letta_message_union import LettaMessageUnion
 from letta_client.types.user_message import UserMessage
 from pydantic import BaseModel
 
-from app.features.users.users_utils import convert_identity_ids_to_user_ids
 
 ROLE = Literal["user", "yenta"]
 
@@ -42,22 +41,15 @@ async def get_user_chat_messages(
     messages: list[LettaMessageUnion],
 ) -> list[UsersChatMessage]:
     res = []
-    identity_ids = {
-        m.sender_id for m in messages if hasattr(m, "sender_id") and m.sender_id
-    }
-    identity_ids_to_user_ids = await convert_identity_ids_to_user_ids(
-        list(identity_ids)
-    )
     for message in messages:
-        if (
-            isinstance(message, UserMessage)
-            and message.sender_id in identity_ids_to_user_ids
-        ):
+        if isinstance(message, UserMessage):
+            sender_id = message.content[:36]
+            content = message.content[37:]
             res.append(
                 UsersChatMessage(
-                    content=message.content[len(message.sender_id) + 1 :],
+                    content=content,
                     message_type=message.message_type,
-                    sender_id=identity_ids_to_user_ids[message.sender_id],
+                    sender_id=sender_id,
                 )
             )
     return res

@@ -1,4 +1,5 @@
 import logging
+import re
 
 from fastapi import APIRouter, Path, Query
 
@@ -29,7 +30,7 @@ yenta_chat_router = APIRouter(prefix="/yenta-chat", tags=["yenta-chat"])
 @yenta_chat_router.get("", response_model=YentaChatsResponse)
 async def get_chats(current_user: CurrentUser) -> YentaChatsResponse:
     conversation_agents = await get_agents(
-        identity_id=current_user.identity_id, chat_type="yenta-chat"
+        user_id=current_user.id, chat_type="yenta-chat"
     )
     return YentaChatsResponse(
         chats_info=[
@@ -42,7 +43,7 @@ async def get_chats(current_user: CurrentUser) -> YentaChatsResponse:
 @yenta_chat_router.post("", response_model=YentaChatCreationResponse)
 async def create_chat(current_user: CurrentUser) -> YentaChatCreationResponse:
     conversation_agent = await create_agent(
-        identity_ids=[current_user.identity_id],
+        user_ids=[current_user.id],
         chat_type="yenta-chat",
         block_ids=[current_user.profile_block_id, current_user.yenta_block_id],
     )
@@ -58,10 +59,16 @@ async def chat_with_memory(
     await get_conversation_for_user(
         current_user=current_user, chat_conversation_id=chat_conversation_id
     )
+
+    # Extract mentioned user IDs from the message text
+    mention_pattern = r"@\[.*?\]\((.*?)\)"
+    mentioned_ids = re.findall(mention_pattern, chat_request.message)
+
     response = await send_message_to_yenta(
+        current_user_id=current_user.id,
         agent_id=chat_conversation_id,
-        sender_id=current_user.identity_id,
         message=chat_request.message,
+        mentioned_ids=mentioned_ids,
     )
     return YentaMessageResponse(messages=get_yenta_chat_messages(response.messages))
 
