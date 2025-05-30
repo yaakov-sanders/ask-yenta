@@ -2,8 +2,6 @@ import logging
 import traceback
 from collections.abc import Callable
 from contextlib import asynccontextmanager
-
-import pydevd_pycharm
 import sentry_sdk
 from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.responses import JSONResponse
@@ -61,6 +59,8 @@ if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
 async def lifespan(app: FastAPI):
     # Load the ML model
     try:
+        import pydevd_pycharm
+
         pydevd_pycharm.settrace(
             "host.docker.internal",
             port=5678,

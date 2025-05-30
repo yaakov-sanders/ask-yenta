@@ -1,8 +1,9 @@
 from collections.abc import AsyncGenerator
 from typing import Annotated
+import os
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
@@ -55,3 +56,15 @@ async def get_current_active_superuser(current_user: CurrentUser) -> User:
             status_code=403, detail="The user doesn't have enough privileges"
         )
     return current_user
+
+
+async def get_letta_agent_key(api_key: str = Depends(Header(alias="X-LETTA-AGENT-KEY"))) -> str:
+    if api_key != os.getenv("LETTA_AGENT_KEY"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid LETTA agent key",
+        )
+    return api_key
+
+
+LettaAgentKey = Annotated[str, Depends(get_letta_agent_key)]

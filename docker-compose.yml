@@ -66,6 +66,7 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - LETTA_PG_URI=postgresql://postgres:${POSTGRES_PASSWORD}@letta-db:5432/letta
+      - BACKEND_URL=http://backend:8000
     depends_on:
       - letta-db
     healthcheck:

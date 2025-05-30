@@ -1,16 +1,19 @@
 import logging
 import re
+from typing import Annotated
 
-from fastapi import APIRouter, Path, Query
+from fastapi import APIRouter, Path, Query, Depends, HTTPException
 
 from app.features.chat.chat_utils import get_conversation_for_user
-from app.features.core.api_deps import CurrentUser
+from app.features.core.api_deps import CurrentUser, LettaAgentKey
 from app.features.letta_logic.letta_logic import (
     create_agent,
     get_agents,
     get_messages,
     send_message_to_yenta,
+    get_block_by_id,
 )
+from app.features.users.users_crud import get_users_by_ids
 from app.features.yenta_chat.yenta_chat_models import (
     YentaChatCreationResponse,
     YentaChatHistoryResponse,
@@ -91,3 +94,16 @@ async def get_chat_history(
     return YentaChatHistoryResponse(
         messages=get_yenta_chat_messages(messages),
     )
+
+
+@yenta_chat_router.get("/profile-block/{user_id}")
+async def get_user_profile_block(user_id: str = Path()) -> dict:
+    """
+    Get a user's profile block value
+    """
+    users = await get_users_by_ids([user_id])
+
+    if not users:
+        raise HTTPException(404, "User not found")
+    block = await get_block_by_id(users[0].profile_block_id)
+    return {"value": block.value}
