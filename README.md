@@ -1,239 +1,115 @@
-# Full Stack FastAPI Template
+# AskYenta - Your AI Relationship Insight Assistant
 
-<a href="https://github.com/fastapi/full-stack-fastapi-template/actions?query=workflow%3ATest" target="_blank"><img src="https://github.com/fastapi/full-stack-fastapi-template/workflows/Test/badge.svg" alt="Test"></a>
-<a href="https://coverage-badge.samuelcolvin.workers.dev/redirect/fastapi/full-stack-fastapi-template" target="_blank"><img src="https://coverage-badge.samuelcolvin.workers.dev/fastapi/full-stack-fastapi-template.svg" alt="Coverage"></a>
+AskYenta is a contextual AI-powered web app that helps users understand themselves and their relationships better. It combines persistent memory, smart conversation tracking, and personal insights — all with a nosy best friend vibe.
 
-## Technology Stack and Features
+## Features
 
-- ⚡ [**FastAPI**](https://fastapi.tiangolo.com) for the Python backend API.
-    - 🧰 [SQLModel](https://sqlmodel.tiangolo.com) for the Python SQL database interactions (ORM).
-    - 🔍 [Pydantic](https://docs.pydantic.dev), used by FastAPI, for the data validation and settings management.
-    - 💾 [PostgreSQL](https://www.postgresql.org) as the SQL database.
-- 🚀 [React](https://react.dev) for the frontend.
-    - 💃 Using TypeScript, hooks, Vite, and other parts of a modern frontend stack.
-    - 🎨 [Chakra UI](https://chakra-ui.com) for the frontend components.
-    - 🤖 An automatically generated frontend client.
-    - 🧪 [Playwright](https://playwright.dev) for End-to-End testing.
-    - 🦇 Dark mode support.
-- 🐋 [Docker Compose](https://www.docker.com) for development and production.
-- 🔒 Secure password hashing by default.
-- 🔑 JWT (JSON Web Token) authentication.
-- 📫 Email based password recovery.
-- ✅ Tests with [Pytest](https://pytest.org).
-- 📞 [Traefik](https://traefik.io) as a reverse proxy / load balancer.
-- 🚢 Deployment instructions using Docker Compose, including how to set up a frontend Traefik proxy to handle automatic HTTPS certificates.
-- 🏭 CI (continuous integration) and CD (continuous deployment) based on GitHub Actions.
+- 🧠 Personalized memory for each user across chats
+- 💬 Observes shared conversations between users to build relationship insights
+- 🔒 Privacy-respecting design with user-controlled connections
+- 🤖 Smart conversation tracking and analysis
+- 🎯 Personalized insights and recommendations
+- 🌙 Dark mode support
+- 📱 Responsive design for all devices
 
-### Dashboard Login
+## Technology Stack
 
-[![API docs](img/login.png)](https://github.com/fastapi/full-stack-fastapi-template)
+### Backend
+- ⚡ [**FastAPI**](https://fastapi.tiangolo.com) - Modern, fast web framework for building APIs
+- 🧰 [SQLModel](https://sqlmodel.tiangolo.com) - SQL database ORM
+- 🔍 [Pydantic](https://docs.pydantic.dev) - Data validation and settings management
+- 💾 [PostgreSQL](https://www.postgresql.org) - Robust SQL database
+- 🤖 [Letta](https://github.com/yourusername/letta) - LLM agent framework for intelligent conversations
 
-### Dashboard - Admin
+### Frontend
+- 🚀 [React](https://react.dev) with TypeScript
+- 🎨 [Chakra UI](https://chakra-ui.com) - Modern component library
+- 🦇 Dark mode support
+- 🧪 [Playwright](https://playwright.dev) for End-to-End testing
 
-[![API docs](img/dashboard.png)](https://github.com/fastapi/full-stack-fastapi-template)
+### Infrastructure
+- 🐋 [Docker Compose](https://www.docker.com) for development and production
+- 📞 [Traefik](https://traefik.io) as reverse proxy
+- 🔒 JWT authentication
+- 📫 Email-based password recovery
+- ✅ Comprehensive test suite with Pytest
+- 🏭 CI/CD with GitHub Actions
 
-### Dashboard - Create User
+## Use Case
 
-[![API docs](img/dashboard-create.png)](https://github.com/fastapi/full-stack-fastapi-template)
+Whether you're chatting one-on-one with Yenta or in a group with someone new, Yenta helps surface what's really going on — emotionally, contextually, and historically.
 
-### Dashboard - Items
+## Getting Started
 
-[![API docs](img/dashboard-items.png)](https://github.com/fastapi/full-stack-fastapi-template)
+### Prerequisites
 
-### Dashboard - User Settings
+- Docker and Docker Compose
+- Node.js (for frontend development)
+- Python 3.8+ (for backend development)
 
-[![API docs](img/dashboard-user-settings.png)](https://github.com/fastapi/full-stack-fastapi-template)
+### Development Setup
 
-### Dashboard - Dark Mode
-
-[![API docs](img/dashboard-dark.png)](https://github.com/fastapi/full-stack-fastapi-template)
-
-### Interactive API Documentation
-
-[![API docs](img/docs.png)](https://github.com/fastapi/full-stack-fastapi-template)
-
-## How To Use It
-
-You can **just fork or clone** this repository and use it as is.
-
-✨ It just works. ✨
-
-### How to Use a Private Repository
-
-If you want to have a private repository, GitHub won't allow you to simply fork it as it doesn't allow changing the visibility of forks.
-
-But you can do the following:
-
-- Create a new GitHub repo, for example `my-full-stack`.
-- Clone this repository manually, set the name with the name of the project you want to use, for example `my-full-stack`:
-
+1. Clone the repository:
 ```bash
-git clone git@github.com:fastapi/full-stack-fastapi-template.git my-full-stack
+git clone https://github.com/yourusername/ask-yenta.git
+cd ask-yenta
 ```
 
-- Enter into the new directory:
-
+2. Set up environment variables:
 ```bash
-cd my-full-stack
+cp .env.example .env
 ```
 
-- Set the new origin to your new repository, copy it from the GitHub interface, for example:
-
+3. Start the development environment:
 ```bash
-git remote set-url origin git@github.com:octocat/my-full-stack.git
+docker-compose up -d
 ```
 
-- Add this repo as another "remote" to allow you to get updates later:
+4. Access the application:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
 
-```bash
-git remote add upstream git@github.com:fastapi/full-stack-fastapi-template.git
-```
+### Configuration
 
-- Push the code to your new repository:
-
-```bash
-git push -u origin master
-```
-
-### Update From the Original Template
-
-After cloning the repository, and after doing changes, you might want to get the latest changes from this original template.
-
-- Make sure you added the original repository as a remote, you can check it with:
-
-```bash
-git remote -v
-
-origin    git@github.com:octocat/my-full-stack.git (fetch)
-origin    git@github.com:octocat/my-full-stack.git (push)
-upstream    git@github.com:fastapi/full-stack-fastapi-template.git (fetch)
-upstream    git@github.com:fastapi/full-stack-fastapi-template.git (push)
-```
-
-- Pull the latest changes without merging:
-
-```bash
-git pull --no-commit upstream master
-```
-
-This will download the latest changes from this template without committing them, that way you can check everything is right before committing.
-
-- If there are conflicts, solve them in your editor.
-
-- Once you are done, commit the changes:
-
-```bash
-git merge --continue
-```
-
-### Configure
-
-You can then update configs in the `.env` files to customize your configurations.
-
-Before deploying it, make sure you change at least the values for:
-
+Before deploying, update the following environment variables:
 - `SECRET_KEY`
 - `FIRST_SUPERUSER_PASSWORD`
 - `POSTGRES_PASSWORD`
 
-You can (and should) pass these as environment variables from secrets.
-
-Read the [deployment.md](./deployment.md) docs for more details.
-
-### Generate Secret Keys
-
-Some environment variables in the `.env` file have a default value of `changethis`.
-
-You have to change them with a secret key, to generate secret keys you can run the following command:
-
+Generate secure keys using:
 ```bash
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-Copy the content and use that as password / secret key. And run that again to generate another secure key.
+## Coming Soon
 
-## How To Use It - Alternative With Copier
-
-This repository also supports generating a new project using [Copier](https://copier.readthedocs.io).
-
-It will copy all the files, ask you configuration questions, and update the `.env` files with your answers.
-
-### Install Copier
-
-You can install Copier with:
-
-```bash
-pip install copier
-```
-
-Or better, if you have [`pipx`](https://pipx.pypa.io/), you can run it with:
-
-```bash
-pipx install copier
-```
-
-**Note**: If you have `pipx`, installing copier is optional, you could run it directly.
-
-### Generate a Project With Copier
-
-Decide a name for your new project's directory, you will use it below. For example, `my-awesome-project`.
-
-Go to the directory that will be the parent of your project, and run the command with your project's name:
-
-```bash
-copier copy https://github.com/fastapi/full-stack-fastapi-template my-awesome-project --trust
-```
-
-If you have `pipx` and you didn't install `copier`, you can run it directly:
-
-```bash
-pipx run copier copy https://github.com/fastapi/full-stack-fastapi-template my-awesome-project --trust
-```
-
-**Note** the `--trust` option is necessary to be able to execute a [post-creation script](https://github.com/fastapi/full-stack-fastapi-template/blob/master/.copier/update_dotenv.py) that updates your `.env` files.
-
-### Input Variables
-
-Copier will ask you for some data, you might want to have at hand before generating the project.
-
-But don't worry, you can just update any of that in the `.env` files afterwards.
-
-The input variables, with their default values (some auto generated) are:
-
-- `project_name`: (default: `"FastAPI Project"`) The name of the project, shown to API users (in .env).
-- `stack_name`: (default: `"fastapi-project"`) The name of the stack used for Docker Compose labels and project name (no spaces, no periods) (in .env).
-- `secret_key`: (default: `"changethis"`) The secret key for the project, used for security, stored in .env, you can generate one with the method above.
-- `first_superuser`: (default: `"admin@example.com"`) The email of the first superuser (in .env).
-- `first_superuser_password`: (default: `"changethis"`) The password of the first superuser (in .env).
-- `smtp_host`: (default: "") The SMTP server host to send emails, you can set it later in .env.
-- `smtp_user`: (default: "") The SMTP server user to send emails, you can set it later in .env.
-- `smtp_password`: (default: "") The SMTP server password to send emails, you can set it later in .env.
-- `emails_from_email`: (default: `"info@example.com"`) The email account to send emails from, you can set it later in .env.
-- `postgres_password`: (default: `"changethis"`) The password for the PostgreSQL database, stored in .env, you can generate one with the method above.
-- `sentry_dsn`: (default: "") The DSN for Sentry, if you are using it, you can set it later in .env.
-
-## Backend Development
-
-Backend docs: [backend/README.md](./backend/README.md).
-
-## Frontend Development
-
-Frontend docs: [frontend/README.md](./frontend/README.md).
-
-## Deployment
-
-Deployment docs: [deployment.md](./deployment.md).
+- Multi-agent conversation views
+- Deeper profile insights
+- Custom tools for user data retrieval and summarization
 
 ## Development
 
-General development docs: [development.md](./development.md).
+- Backend development: See [backend/README.md](./backend/README.md)
+- Frontend development: See [frontend/README.md](./frontend/README.md)
+- General development: See [development.md](./development.md)
 
-This includes using Docker Compose, custom local domains, `.env` configurations, etc.
+## Deployment
 
-## Release Notes
+For deployment instructions, see [deployment.md](./deployment.md).
 
-Check the file [release-notes.md](./release-notes.md).
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-The Full Stack FastAPI Template is licensed under the terms of the MIT license.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Security
+
+For security concerns, please see [SECURITY.md](SECURITY.md).
