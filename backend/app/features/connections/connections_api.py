@@ -6,6 +6,9 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app.features.connections.connections_crud import (
     get_user_connections,
     get_connection,
+    create_connection,
+    update_connection,
+    delete_connection,
 )
 from app.features.connections.connections_models import (
     ConnectionPublic,
@@ -21,7 +24,7 @@ router = APIRouter(prefix="/connections", tags=["connections"])
 
 
 @router.post("/", response_model=ConnectionPublic)
-async def create_connection(
+async def create_connection_endpoint(
     *,
     session: AsyncSession = Depends(get_db),
     connection_in: ConnectionCreate,
@@ -75,7 +78,7 @@ async def read_connection(
 
 
 @router.put("/{connection_id}", response_model=ConnectionPublic)
-async def update_connection(
+async def update_connection_endpoint(
     *,
     session: AsyncSession = Depends(get_db),
     connection_id: str,
@@ -97,7 +100,7 @@ async def update_connection(
 
 
 @router.delete("/{connection_id}")
-async def delete_connection(
+async def delete_connection_endpoint(
     *,
     session: AsyncSession = Depends(get_db),
     connection_id: str,
