@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10, <4.0"
 
 [[package]]
@@ -883,7 +883,7 @@ wheels = [
 
 [[package]]
 name = "letta-client"
-version = "0.1.146"
+version = "0.1.312"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -892,9 +892,9 @@ dependencies = [
     { name = "pydantic-core" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a2/99/a694c3be5fb6765014f3fdfcc9918ff488c039d3c44c893ec9fa4ed426b9/letta_client-0.1.146.tar.gz", hash = "sha256:0864a65e59abd5e9762f4176af2687d968a4c757473019199f5c9cb7d74bc693", size = 107811, upload-time = "2025-05-23T02:51:28.53Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1d/bf/da9b9a2d8b0a8fd7c0fcae03557cd7179ed232859fda15b8b77db344f14d/letta_client-0.1.312.tar.gz", hash = "sha256:5d80db1f667b86f4ff1492eb492c7ed98cb8c71145ee56b1ca9602716183709e", size = 195127, upload-time = "2025-09-04T18:15:08.25Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f2/60/f11f70fbdc24b1054691125d378d0e361527386e405ab2bf17fa892166ad/letta_client-0.1.146-py3-none-any.whl", hash = "sha256:7af140fcfd065ec924eebc5bf3ae66aaa1447bddf3c4a63c3be27381f363feae", size = 283585, upload-time = "2025-05-23T02:51:26.874Z" },
+    { url = "https://files.pythonhosted.org/packages/af/e6/b4caae74cce7a22532d55efd0a3cf5c0def84367efaf89db90b86ce14d1e/letta_client-0.1.312-py3-none-any.whl", hash = "sha256:47218017ea92e75c689f0d835974fdc69dd6737717d04b13ffe8ecbc0f244f5d", size = 489283, upload-time = "2025-09-04T18:15:06.42Z" },
 ]
 
 [[package]]
